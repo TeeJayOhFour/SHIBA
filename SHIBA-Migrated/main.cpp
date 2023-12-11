@@ -1,14 +1,10 @@
-// #include <iostream>
+
 //including IO stream or stdlib not required as it's in engine.hpp already.
 #include "SHIBA.h"
 using namespace std;
 
 
-void kyakya() {
-    cout << "Init complete" << endl;
-}
-
-int main3(int argc, char** argv) {
+int main(int argc, char** argv) {
 
     int L3Map[20][20] = {
         {8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 4, 4, 4, 4, 4},
@@ -108,6 +104,7 @@ int main3(int argc, char** argv) {
     Level meow1 = Level("Level 1", L5Map);
     Level meow2 = Level("Level 2", L2Map);
     Level meow3 = Level("Level 3", L3Map);
+
 
     //! TODO Allow shibaobject to handle glutsolids
     ShibaObject batman(5, 1, 5);

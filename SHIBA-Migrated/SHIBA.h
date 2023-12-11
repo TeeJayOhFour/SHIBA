@@ -1,361 +1,29 @@
 #pragma once
-#pragma warning(disable:4996)
-#ifndef TJSENGINE_H
-#define TJSENGINE_H
+
 #define TITLE "SHIBA Engine v1.0 by TJ | Copyright 2023"
 // Stupidly Horrendous Implementation of Basic Animations
 
-
-//TODO for 10th dec:
-// Sorted from easy to hard.
-// HUD with damage
-	// start 830
-	// finish 900
-// menu
-	// start 900
-	// end 1000
-// enemy spawners
-// sound engine
 #include <math.h>
-#include <iostream>
-#include <filesystem>
-#include <stdlib.h>
-#include <GL/freeglut.h>
 #include <queue>
-#include <math.h>
 #include <chrono>
 #include <time.h>
 #include <functional>
 #include <unordered_map>
 #include <string>
 
-float DevHudY = 0.0f;
+#include "Config.h"
 
-#define SENSITIVITY 50.0f	//Higher is slower.
-#define FPS 60
-#define TILESIZE 5.0f	//should be 5
-#define WALLSIZE 20.0f	//should be 20
-#define DEBUGMODE TRUE
-#define GROUNDLEVEL -5.0f
-#define TO_RADIANS 3.141592/180.0
-#define array_size(arr) (sizeof(arr) / sizeof(*(arr)))
-#define ANIMATIONSTEP 10.0f		//Higher value is slower/smoother
-#define BOUNDARY 69
-#define FLOOR 70
-#define TRAVEL 300
-
-#define WIDTH 16*80
-#define HEIGHT 9*80
+float DevHudY = 0.0f;		//WHY IS THIS STILL HERE?! REMOVE IT FFS IT SERVES NO PURPOSE
 
 // for FPS calculation
 int initTime = time(NULL), finalTime, frameCount = 0;
 
-// Configuration
-//-1 = Empty
-// 0 = Spawn location.
-// 1 = Enemies
-// 2 = Objectives (Eggs)
-// 3 = Notes
-// 4 = Walls/Barriers (you cannot pass through)
-// 5 = Doors
-// 6 = Bosses
-// 7 = Custom 3D models
 
-struct Image {
-	unsigned long sizeX;
-	unsigned long sizeY;
-	char* data;
-};
+#include "DataStructures.h"
 
-// This is for the checkered pattern. That's all.
-#define checkImageWidth 64
-#define checkImageHeight 64
-GLubyte checkImage[checkImageWidth][checkImageHeight][3];
-
-enum tileID {
-	Empty = 0,
-	SpawnLoc = -1,
-	EnemySpawner = 1,
-	Objective = 2,
-	Notes = 3,
-	Wall = 4,
-	DoorClosed = 5,
-	DoorOpen = -5,
-	Boss = 6,
-	Custom = 7,
-	Bullet = 10
-};
-
-struct Position {
-
-	int frontObject = -1;
-	float x = 0;
-	float y = 0;
-	float z = 0;
-	float yaw = 0;
-	float pitch = 0;
-	// used for checking if a specific button is pressed.
-	int button = -1;
-	int buttonState = -1;
-
-	bool operator == (const Position& a) {
-		if (x == a.x && y == a.y &&
-			z == a.z && yaw == a.yaw &&
-			pitch == a.pitch) return true;
-		else return false;
-	}
-
-	Position& operator -= (const Position& a) {
-
-		this->x -= a.x;
-		this->y -= a.y;
-		this->z -= a.z;
-		this->yaw -= a.yaw;
-		this->pitch -= a.pitch;
-		return *this;
-	}
-
-	Position& operator += (const Position& a) {
-
-		x += a.x;
-		y += a.y;
-		z += a.z;
-		yaw += a.yaw;
-		pitch += a.pitch;
-		return *this;
-	}
-
-	bool operator <= (const float& a) {
-
-		if (x <= a &&
-			y <= a &&
-			z <= a &&
-			yaw <= a &&
-			pitch <= a) return true;
-		return false;
-	}
-
-	Position& operator / (const float& a) {
-
-		x /= a;
-		y /= a;
-		z /= a;
-		yaw /= a;
-		pitch /= a;
-
-		return *this;
-	}
-
-	Position& operator - (const float& a) {
-
-		x -= a;
-		y -= a;
-		z -= a;
-		yaw -= a;
-		pitch -= a;
-
-		return *this;
-	}
-	Position& operator += (const float& a) {
-
-		x += a;
-		y += a;
-		z += a;
-		yaw += a;
-		pitch += a;
-
-		return *this;
-	}
-
-	Position& absolute() {
-
-		x = abs(x);
-		y = abs(y);
-		z = abs(z);
-		yaw = abs(yaw);
-		pitch = abs(pitch);
-
-		return *this;
-
-	}
-
-	Position toTile() {
-		Position temp;
-
-		temp.x = round(x / 10);
-		temp.z = round(z / 10);
-		temp.y = round(y / 10);
-
-		return temp;
-
-	}
-
-
-
-};
-
-struct ShibaQuad {
-	float x;
-	float y;
-	float z;
-	float normal[3];
-};
-
-struct Motion {
-	bool Forward, Backward, Left, Right;
-	float speedUp, speedBack, speedLeft, speedRight;
-} motion = { false, false, false, false, 2.0f, 2.0f, 2.0f, 2.0f };
-
-struct Poles {
-	bool north, south, east, west;
-} facing = { false, false, false, false };
-
-void getColorMod(int id);	//This function is needed by ShibaObject.
-
-// Custom Object Class. All vertexes must be drawn anti-clockwise
-class ShibaObject {
-
-public:
-	// Tile coordinates
-	std::string objectName;
-	Position offset;
-	bool texture = false;
-	std::vector<ShibaQuad> vertexCol;
-	std::vector<ShibaQuad> texturePoints;
-	int health = 100;
-
-	using loadFunction = void (*)(ShibaObject);
-
-	int color = 0, tileX = 0, tileZ = 0;
-
-	// Using offset the object can be modified from the origin.
-	ShibaObject(int x, int y, int z) {
-
-		tileX = x / 10;
-		tileZ = z / 10;
-
-		offset.x = 0;
-		offset.y = 0;
-		offset.z = 0;
-		offset.pitch = 0;
-		offset.yaw = 0;
-	}
-
-	void setLoadGlutFunction(loadFunction func) {
-		glutSolids = func;
-	}
-
-	void loadGlutSolids() {
-		if (glutSolids != nullptr) {
-			glutSolids(*this);
-		}
-		else {
-			// std::cout << "This 3D object doesn't have any custom Glut Solids or it wasn't assigned." << std::endl;
-		}
-	}
-
-	void load() {
-		// texture code goes here
-
-		glBegin(GL_QUADS);
-
-		if (!texture) getColorMod(this->color);
-		else glColor3f(1, 1, 1);
-		int vertexCount = 0;
-
-		// loop through each vertex collection.
-		if (!vertexCol.empty())
-			for (int v = 0; v < this->vertexCol.size(); v++) {
-
-				if (vertexCount == 4) vertexCount = 0;
-
-				glTexCoord2f(texturePoints.at(vertexCount).x, texturePoints.at(vertexCount).y);
-				vertexCount++;
-
-				// Setting texture pinning points
-
-				// setting normals
-				glNormal3f(
-					this->vertexCol.at(v).normal[0], 	//X
-					this->vertexCol.at(v).normal[1], 	//Y
-					this->vertexCol.at(v).normal[2]);	//Z
-
-				// setting vertex position
-				glVertex3f(
-					this->vertexCol.at(v).x + this->offset.x,
-					this->vertexCol.at(v).y + this->offset.y,
-					this->vertexCol.at(v).z + this->offset.z
-				);
-			}
-		glEnd();
-
-	}
-
-	// allowing to overwrite current object with another
-	ShibaObject& operator= (const ShibaObject& a) {
-		//! TODO Finish this or code won't compile.
-		this->color = a.color;
-		this->glutSolids = a.glutSolids;
-		this->objectName = a.objectName;
-		this->offset = a.offset;
-		this->texture = a.texture;
-		this->texturePoints = a.texturePoints;
-		this->tileX = a.tileX;
-		this->tileZ = a.tileZ;
-		this->vertexCol = a.vertexCol;
-
-		return *this;
-	}
-
-private:
-	loadFunction glutSolids = nullptr;
-
-};
-
-// Level class included for easier level creation.
-class Level {
-public:
-	std::string name;
-	int(*levelGrid)[20];
-	int objectives = 0;
-	int enemies = 0;
-	std::vector <ShibaObject> customObjects;
-
-
-	Level(std::string levelName, int map[][20]) {
-		this->name = levelName;
-		levelGrid = map;
-	}
-
-	void printLevel() {
-		int  i, j;
-		for (i = 0; i < 20; i++)
-		{
-			for (j = 0; j < 20; j++)
-				std::cout << " " << levelGrid[i][j];
-			std::cout << std::endl;
-		}
-		std::cout << std::endl;
-	}
-
-
-};
-
-class Entity {
-
-public:
-
-	int health = 100;
-	Position center;
-	std::vector<ShibaQuad> texturePoints;
-
-	Entity(Position& a) {
-		center = a;
-	}
-
-
-};
-
+//Player navigation info
+Motion motion = { false, false, false, false };
+Poles facing = { false, false, false, false };
 
 // Globals
 int pitchLimit = 60;
@@ -364,14 +32,13 @@ int currentScene = -1;
 struct Position crosshair;
 std::queue <Level> levelQueue;
 std::queue <std::string> debugInfoQueue;
-Position cameraPosition;	//Actual camera cords in 3D space.
+Position cameraPosition;	//camera cords
 Entity player(cameraPosition);
 
 Position levelBounds;
 std::vector <Position> possibleSpawns;
 std::vector <ShibaObject> objectCollection;
 std::vector <int> enemySpawnerLocations;
-// std::vector <ShibaObject> bulletCollection;
 
 // stores the ID of the object along with target postion value.
 std::unordered_map <int, Position> animationQueue;
@@ -379,14 +46,6 @@ std::unordered_map <int, GLuint> textureCollection;
 std::unordered_map <int, Position> bulletAnimation;
 std::unordered_map <std::string, ShibaObject> bulletCollection;
 
-
-int lastKey = 0;
-bool track = false;
-bool wireframe = false;
-bool collision = true;
-bool light = true;
-int lastFPS = 0;
-int movemenSpeed = 2.0; //Higher is slower.
 
 // Prototypes
 void menu();
@@ -396,7 +55,6 @@ void camera();
 void options();
 void lighting();
 void devScreen();
-void handleMainMenuInteraction(std::string option);
 void updateHUD();
 void spawnPlayer();
 void renderScene();
@@ -416,132 +74,14 @@ void checkForInteraction(Position& entity);
 void makeWall(int x, int z, int x2, int z2);
 void maintainAspectRatio(int width, int height);
 void listenForSpecialKeys(int key, int x, int y);
+void handleMainMenuInteraction(std::string option);
 bool collisionCheck(int direction, float x, float z);
 void listenForNormalKeys(unsigned char key, int x, int y);
 void listenForMouseClick(int button, int state, int x, int y);
 void listenForNormalKeysRelease(unsigned char key, int x, int y);
 void renderText(float x, float y, int r, int g, int b, const char* string);
 
-GLuint texture;
-// GLuint *texture;
-
-void makeCheckImage(void) {
-	int i, j, c;
-	for (i = 0; i < checkImageWidth; i++) {
-		for (j = 0; j < checkImageHeight; j++) {
-			c = ((((i & 0x8) == 0) ^ ((j & 0x8) == 0))) * 255;
-			checkImage[i][j][0] = (GLubyte)c;
-			checkImage[i][j][1] = (GLubyte)c;
-			checkImage[i][j][2] = (GLubyte)c;
-		}
-	}
-}
-
-int ImageLoad(const char* filename, Image* image) {
-	FILE* file;
-	unsigned long size; // size of the image in bytes.
-	unsigned long i; // standard counter.
-	unsigned short int planes; // number of planes in image (must be 1)
-	unsigned short int bpp; // number of bits per pixel (must be 24)
-	char temp; // temporary color storage for bgr-rgb conversion.
-
-	// make sure the file is there.
-	if ((file = fopen(filename, "rb")) == NULL) {
-		printf("File Not Found : %s\n", filename);
-		return 0;
-	}
-
-	// seek through the bmp header, up to the width/height:
-	fseek(file, 18, SEEK_CUR);
-
-	// read the width
-	if ((i = fread(&image->sizeX, 4, 1, file)) != 1) {
-		printf("Error reading width from %s.\n", filename);
-		return 0;
-	}
-
-	// read the height
-	if ((i = fread(&image->sizeY, 4, 1, file)) != 1) {
-		printf("Error reading height from %s.\n", filename);
-		return 0;
-	}
-
-	// calculate the size (assuming 24 bits or 3 bytes per pixel).
-	size = image->sizeX * image->sizeY * 3;
-
-	// read the planes
-	if ((fread(&planes, 2, 1, file)) != 1) {
-		printf("Error reading planes from %s.\n", filename);
-		return 0;
-	}
-	if (planes != 1) {
-		printf("Planes from %s is not 1: %u\n", filename, planes);
-		return 0;
-	}
-	// read the bitsperpixel
-	if ((i = fread(&bpp, 2, 1, file)) != 1) {
-		printf("Error reading bpp from %s.\n", filename);
-		return 0;
-	}
-	if (bpp != 24) {
-		printf("Bpp from %s is not 24: %u\n", filename, bpp);
-		return 0;
-	}
-	// seek past the rest of the bitmap header.
-	fseek(file, 24, SEEK_CUR);
-	// read the data.
-	image->data = (char*)malloc(size);
-	if (image->data == NULL) {
-		printf("Error allocating memory for color-corrected image data");
-		return 0;
-	}
-	if ((i = fread(image->data, size, 1, file)) != 1) {
-		printf("Error reading image data from %s.\n", filename);
-		return 0;
-	}
-	for (i = 0; i < size; i += 3) { // reverse all of the colors. (bgr -> rgb)
-		temp = image->data[i];
-		image->data[i] = image->data[i + 2];
-		image->data[i + 2] = temp;
-	}
-	// we're done.
-	return 1;
-}
-
-Image* loadTexture(const char* filename) {
-	Image* result;
-	// allocate space for texture
-	result = (Image*)malloc(sizeof(Image));
-	if (result == NULL) {
-		std::cout << "Error allocating space for image" << std::endl;
-		exit(0);
-	}
-
-	if (!ImageLoad(filename, result)) {
-		exit(1);
-	}
-
-	// final check after image has been loaded.
-	if (result == NULL) {
-		std::cout << "Image was not returned from loadTexture. File: " << filename << std::endl;
-		exit(0);
-	}
-
-	return result;
-}
-
-void parseTexture(Image* img, int id) {
-
-	// Create Texture
-	glGenTextures(1, &textureCollection.at(id));
-	glBindTexture(GL_TEXTURE_2D, textureCollection.at(id));
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); //scale linearly when image bigger than texture
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); //scale linearly when image smalled than texture
-	glTexImage2D(GL_TEXTURE_2D, 0, 3, img->sizeX, img->sizeY, 0, GL_RGB, GL_UNSIGNED_BYTE, img->data);
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-
-}
+#include "TextureLoader.h"
 
 void initTextures() {
 
@@ -569,18 +109,9 @@ void initTextures() {
 	Image* image4 = loadTexture("assets/textures/door.bmp");
 	parseTexture(image4, DoorClosed);
 
-	//! No need to make checkered patter lol
-	// Checkered pattern for last texture
-	// makeCheckImage();	//making this for missing textures just in case.
-	// glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-	// glBindTexture(GL_TEXTURE_2D, texture[7]);
-	// glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	// glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	// glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
-	// glTexImage2D(GL_TEXTURE_2D, 0, 3, checkImageWidth, checkImageHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, &checkImage[0][0][0]);
 }
 
-void initGLFlags() {
+static void initGLFlags() {
 
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glShadeModel(GL_SMOOTH);
@@ -597,7 +128,7 @@ void initGLFlags() {
 
 }
 
-void updateHUD() {
+static void updateHUD() {
 
 	// So lights don't affect text
 	glDisable(GL_LIGHTING);
@@ -670,7 +201,7 @@ void updateHUD() {
 
 }
 
-void devScreen() {
+static void devScreen() {
 
 	glDisable(GL_LIGHTING);
 
@@ -776,7 +307,7 @@ void devScreen() {
 
 }
 
-int launch(int argc, char** argv) {
+static int launch(int argc, char** argv) {
 
 	std::cout << TITLE << std::endl;
 
@@ -973,6 +504,15 @@ void menu() {
 void options() {
 
 	//TODO: Create a separate class system for MENUs
+	
+	// List of options
+	// 
+	// Fullscreen	ON/OFF	default(off)
+	// Cursor Sensitivity	0-10	Slider?	(default 5)
+	// Cencorship	ON/OFF	default (off)
+	// Master Sound Volume	0-100	Slider	(default 100)
+	
+	renderText(0, glutGet(GLUT_WINDOW_HEIGHT) / 2, 1, 0, 0, "Options go here");
 
 
 }
@@ -1004,7 +544,7 @@ void draw() {
 	// loops through a collection of 3D models and draws them in level.
 	for (int i = 0; i < objectCollection.size(); i++) {
 		// Setting the texture if available.
-		if (objectCollection.at(i).texture == true) {
+		if (objectCollection.at(i).texture && !wireframe) {
 
 			glBindTexture(GL_TEXTURE_2D, textureCollection.at(objectCollection.at(i).color));
 
@@ -1339,13 +879,6 @@ void listenForMouseClick(int button, int state, int x, int y) {
 		if (state && track) shoot();
 		// else do menu stuff
 		break;
-	case 1:
-		currentScene--;
-		break;
-
-	case 2:
-		currentScene++;
-		break;
 	}
 
 	crosshair.button = button;
@@ -1380,7 +913,7 @@ void listenForMouseMovement(int x, int y) {
 		else cameraPosition.yaw += (float)dev_x / SENSITIVITY;
 
 		// Setting pole orientation
-		Poles finalFacing;
+		Poles finalFacing = { false,false,false,false };
 		if (cameraPosition.yaw < 270.0 + 45 && cameraPosition.yaw > 270.0 - 45) finalFacing.north = true;
 		else if (cameraPosition.yaw < 180 + 45 && cameraPosition.yaw > 180 - 45) finalFacing.east = true;
 		else if (cameraPosition.yaw < 90 + 45 && cameraPosition.yaw > 90 - 45) finalFacing.south = true;
@@ -1388,6 +921,7 @@ void listenForMouseMovement(int x, int y) {
 
 		cameraPosition.pitch += (float)dev_y / SENSITIVITY;
 		facing = finalFacing;
+		//! The facing doesn't get updated.
 
 	}
 
@@ -1558,6 +1092,7 @@ void initLevels(std::queue <Level> queue) {
 
 void renderGameElements() {
 
+	//	Locks or unlocks the cursor
 	if (track) glutWarpPointer(WIDTH / 2, HEIGHT / 2);
 
 	camera();	//player
@@ -1571,7 +1106,8 @@ void renderGameElements() {
 	updateHUD();
 
 	// Pathing algorithms for enemies.
-
+	//spawnEnemies();		//!TODO finish this
+	
 
 }
 
@@ -1617,42 +1153,6 @@ void camera() {
 	glRotatef(-cameraPosition.yaw, 0.0, 1.0, 0.0);    //Along Y axis
 
 	glTranslatef(-cameraPosition.x, -cameraPosition.y, -cameraPosition.z);  //new position
-}
-
-void getColorMod(int id) {
-
-	switch (id) {
-	case -1:	//floor: Grey
-		glColor3f(0.5, 0.5, 0.5);
-		break;
-	case 0:		//spawn points: Purple
-		glColor3f(0.6, 0.2, 0.6);
-		break;
-	case 1:		//enemy spawner: Red
-		glColor3f(1.0, 0.0, 0.0);
-		break;
-	case 2:		//Objectives: Blue
-		glColor3f(0.0, 0.0, 1.0);
-		break;
-	case 3:		//Notes: Cyan
-		glColor3f(0.0, 1, 1);
-		break;
-	case 4:		//Walls : Grey
-		glColor3f(1.0, 1.0, 1.0);
-		break;
-	case 5:		//Doors: Yellow
-		glColor3f(1.0, 1.0, 0.0);
-		break;
-	case 6:		//Boss Location: Orange
-		glColor3f(1.0, 0.60, 0.0);
-		break;
-	case 7:		//Custom 3D model unique to map: Green
-		glColor3f(0.0, 1.0, 0.0);
-		break;
-	default:
-		glColor3f(0.0, 0.0, 0.0);
-		break;
-	}
 }
 
 // set camera back to spawn and default Y axis
@@ -1740,13 +1240,6 @@ void spawnPlayer() {
 
 
 }
-
-// generate a random number between the low and high range, inclusive
-int randomInt(int low, int high) {
-	return (rand() % (high - low + 1)) + low;
-}
-
-
 void checkForInteraction(Position& entity) {
 
 	int size = array_size(*levelQueue.front().levelGrid);
@@ -1800,47 +1293,6 @@ void interactWithObj(int objectID) {
 
 
 	queueAnimation(objectID, ((size - 1) - objectCollection.at(objectID).tileX), objectCollection.at(objectID).tileZ);
-
-	// int size = array_size(*levelQueue.front().levelGrid);
-	// int xModifier = 1, zModifier = 20, worldX = cameraPosition.toTile().x, worldZ = cameraPosition.toTile().z;
-
-	// int id = (((cameraPosition.toTile().z) * size) + (cameraPosition.toTile().x));
-
-	// // out of bounds prevention
-	// if (facing.north) {	// X+
-	// 	worldX++;
-	// 	id += xModifier;	
-	// } else if (facing.south) {	// X-
-	// 	worldX--;
-	// 	id -= xModifier;	
-	// }  else if (facing.east) {	// Z+
-	// 	worldZ++;
-	// 	id += zModifier;		
-	// } else {	// Z- (West)
-	// 	worldZ--;
-	// 	id -= zModifier;	
-	// } 
-
-	// if (id < 0 || id >= (size * size)) 
-	// 	id = -1;
-
-	// if ((facing.east && cameraPosition.toTile().z == size - 1) || (facing.west && cameraPosition.toTile().z == 0)) 
-	// 	id = -1;
-
-	// if (id != -1) {
-
-	// 	// Interaction animation
-	// 	std::cout << "ID: "<< id << " : " << objectCollection.at(id).color << std::endl;
-	// 	std::cout << "X: "<< worldX << " Z: " << worldZ << std::endl;
-	// 	std::cout << "VAL: "<< levelQueue.front().levelGrid[worldX][worldZ] << std::endl;
-
-	// 	if (lastKey == (int) 'e')
-	// 	queueAnimation(id, ((size-1) - worldX), worldZ);
-
-	// } else {
-	// 	std::cout << "Out of bounds" << std::endl;
-	// }
-
 
 }
 
@@ -1959,25 +1411,6 @@ void lighting() {
 		glDisable(GL_LIGHT0);
 	}
 
-	// // Set global ambient light
-	// GLfloat globalAmbient[] = {0.4f, 0.4f, 0.4f, 1.0f};
-	// glLightModelfv(GL_LIGHT_MODEL_AMBIENT, globalAmbient);
-
-	// // Set light position
-	// GLfloat lightPosition[] = {levelBounds.x/2, GROUNDLEVEL+2.0f, levelBounds.z/2, 1.0f};
-	// glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
-
-	// // Set material properties
-	// GLfloat ambientMaterial[] = {1.0f, 1.0f, 1.0f, 0.0f};
-	// GLfloat diffuseMaterial[] = {1.0f, 1.0f, 1.0f, 0.0f};
-	// GLfloat specularMaterial[] = {1.0f, 1.0f, 1.0f, 0.0f};
-	// GLfloat shininess = 10.0f;
-
-	// glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambientMaterial);
-	// glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuseMaterial);
-	// glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularMaterial);
-	// glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, shininess);
-
 }
 
 void bulletModel(ShibaObject a) {
@@ -2074,25 +1507,4 @@ void shoot() {
 	target.y = newY;
 	bulletAnimation.insert_or_assign(id, target);
 
-	// if (facing.north) {
-	// 	target.x = levelBounds.x;
-	// 	bulletAnimation.insert_or_assign(id, target);
-	// } 
-	// if (facing.south) {
-	// 	target.x = -levelBounds.x;
-	// 	bulletAnimation.insert_or_assign(id, target);
-	// } 
-	// if (facing.east) {
-	// 	target.z = levelBounds.z;
-	// 	bulletAnimation.insert_or_assign(id, target);
-	// } 
-	// if (facing.west) {
-	// 	target.z = -levelBounds.z;
-	// 	bulletAnimation.insert_or_assign(id, target);
-	// } 
-
-
 }
-
-
-#endif

@@ -2,23 +2,23 @@
 #include <irrKlang.h>
 
 
-using namespace irrklang;
+//using namespace irrklang;
 
-int main(int argc, char** argv) {
+int notmainss() {
 
 	
-	ISoundEngine* engine = createIrrKlangDevice();
+	//ISoundEngine* engine = createIrrKlangDevice();
 
-	if (!engine) {
-		return 0;
-	}
-	engine->play2D("media/getout.ogg", true);
-	while (true) {
+	//if (!engine) {
+	//	return 0;
+	//}
+	//engine->play2D("media/getout.ogg", true);
+	//while (true) {
 
-	}
-	engine->drop();
+	//}
+	//engine->drop();
 
-	std::cout << "Your mom is gay" << std::endl;
+	//std::cout << "Your mom is gay" << std::endl;
 
 	return 0;
 }
