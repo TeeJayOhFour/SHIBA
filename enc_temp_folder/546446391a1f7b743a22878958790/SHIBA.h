@@ -55,8 +55,8 @@ void listenForMouseMovement(int x, int y);
 void checkForInteraction(Position& entity);
 void maintainAspectRatio(int width, int height);
 void listenForSpecialKeys(int key, int x, int y);
-void handleMainMenuInteraction(std::string option, int value);
-void handleOptionInteraction(std::string option, int value);
+void handleMainMenuInteraction(std::string option);
+void handleOptionInteraction(std::string option);
 bool collisionCheck(int direction, float x, float z);
 void listenForNormalKeys(unsigned char key, int x, int y);
 void listenForMouseClick(int button, int state, int x, int y);
@@ -83,12 +83,8 @@ void initMenu() {
 	menuOptions.clear();
 
 	menuOptions.push_back({ "BACK", BUTTON });
-	menuOptions.push_back({ "MASTER SOUND VOLUME", MULTI_BUTTON, 100 });	//100 by default
-	menuOptions.push_back({ "MOUSE SENSITIVITY", MULTI_BUTTON, (int) SENSITIVITY });
-	menuOptions.back().value.push_back((int) SENSITIVITY_HIGH);
-	menuOptions.back().value.push_back((int) SENSITIVITY_LOW);
-
-
+	menuOptions.push_back({ "MASTER SOUND VOLUME", SLIDER_BUTTON, 100 });	//100 by default
+	menuOptions.push_back({ "MOUSE SENSITIVITY", SLIDER_BUTTON, 5 });	//5 by default
 	menuOptions.push_back({ "FULLSCREEN", TOGGLE_BUTTON, 0 });	//off by default
 	menuOptions.push_back({ "SHOW BLOOD", TOGGLE_BUTTON, 1 });	//on by default
 
@@ -423,25 +419,13 @@ void menu() {
 }
 
 // reads and writes for various game settings
-void handleOptionInteraction(std::string option, int value = -1) {
+void handleOptionInteraction(std::string option) {
 
 	//TODO: Create a separate class system for MENUs
-	if (option == "BACK") {
+	if (option == "Back") {
 		//Putting the main menu back on queue before going to options.
 		menuQueue.push(menuQueue.front());
 		menuQueue.pop();
-	}
-
-	if (option == "FULLSCREEN") {
-
-		glutFullScreenToggle();
-		
-	}
-
-	if (option == "MOUSE SENSITIVITY") {
-
-		std::cout << value << std::endl;
-
 	}
 
 	
@@ -458,7 +442,7 @@ void handleOptionInteraction(std::string option, int value = -1) {
 }
 
 // Contains all the logic for displaying menu options and all
-void handleMainMenuInteraction(std::string option, int value = -1) {
+void handleMainMenuInteraction(std::string option) {
 
 	//? Maybe make an exit confirmation?
 	if (option == "EXIT") exit(0);
@@ -868,6 +852,7 @@ void listenForMouseMovement(int x, int y) {
 
 		cameraPosition.pitch += (float)dev_y / SENSITIVITY;
 		facing = finalFacing;
+		//! The facing doesn't get updated.
 
 	}
 

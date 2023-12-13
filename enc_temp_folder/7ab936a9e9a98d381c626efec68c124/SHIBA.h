@@ -83,8 +83,8 @@ void initMenu() {
 	menuOptions.clear();
 
 	menuOptions.push_back({ "BACK", BUTTON });
-	menuOptions.push_back({ "MASTER SOUND VOLUME", MULTI_BUTTON, 100 });	//100 by default
-	menuOptions.push_back({ "MOUSE SENSITIVITY", MULTI_BUTTON, (int) SENSITIVITY });
+	menuOptions.push_back({ "MASTER SOUND VOLUME", MUTLI_BUTTON, 100 });	//100 by default
+	menuOptions.push_back({ "MOUSE SENSITIVITY", MUTLI_BUTTON, (int) SENSITIVITY });
 	menuOptions.back().value.push_back((int) SENSITIVITY_HIGH);
 	menuOptions.back().value.push_back((int) SENSITIVITY_LOW);
 
@@ -436,12 +436,6 @@ void handleOptionInteraction(std::string option, int value = -1) {
 
 		glutFullScreenToggle();
 		
-	}
-
-	if (option == "MOUSE SENSITIVITY") {
-
-		std::cout << value << std::endl;
-
 	}
 
 	

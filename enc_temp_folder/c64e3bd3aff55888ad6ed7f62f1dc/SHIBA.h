@@ -85,6 +85,7 @@ void initMenu() {
 	menuOptions.push_back({ "BACK", BUTTON });
 	menuOptions.push_back({ "MASTER SOUND VOLUME", MULTI_BUTTON, 100 });	//100 by default
 	menuOptions.push_back({ "MOUSE SENSITIVITY", MULTI_BUTTON, (int) SENSITIVITY });
+	menuOptions.back().value.push_back((int) SENSITIVITY);
 	menuOptions.back().value.push_back((int) SENSITIVITY_HIGH);
 	menuOptions.back().value.push_back((int) SENSITIVITY_LOW);
 
@@ -440,7 +441,7 @@ void handleOptionInteraction(std::string option, int value = -1) {
 
 	if (option == "MOUSE SENSITIVITY") {
 
-		std::cout << value << std::endl;
+		
 
 	}
 

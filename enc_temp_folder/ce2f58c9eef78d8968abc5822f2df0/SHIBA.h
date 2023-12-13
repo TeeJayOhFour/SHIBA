@@ -440,7 +440,7 @@ void handleOptionInteraction(std::string option, int value = -1) {
 
 	if (option == "MOUSE SENSITIVITY") {
 
-		std::cout << value << std::endl;
+		
 
 	}
 

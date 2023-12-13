@@ -319,7 +319,7 @@ public:
 enum menuTypes {
 
 	BUTTON = 1,
-	MULTI_BUTTON = 2,
+	SLIDER_BUTTON = 2,
 	INPUT_BUTTON = 3,
 	TOGGLE_BUTTON = 4,
 
@@ -332,8 +332,6 @@ public:
 	int type = BUTTON;
 	std::vector <int> value;
 	bool hovering = false;
-	int gap = 300;
-	int head = 0;
 
 	MenuOption(std::string text, int type, int value = -1) {
 		this->text = text;
@@ -357,37 +355,29 @@ public:
 			
 		glBegin(GL_QUADS);
 		glNormal3f(0, 0, 0);
-		int spacing = 0;
-
+		
 		switch (type) {
 
-		case MULTI_BUTTON:
-			//Highlights option
+		case SLIDER_BUTTON:
+			//override hover area.
+			hovering = false;
+			if (cursor->x > x && cursor->x < x + (this->text.length() * 13)
+				&& cursor->y > y - padding - textHeight && cursor->y < y - textHeight) {
+
+				hovering = true;
+			}
+
 			glVertex2f(x - padding, y - padding);
 			glVertex2f(x + (text.length() * 13), y - padding);
 			glVertex2f(x + (text.length() * 13), y + textHeight);
 			glVertex2f(x - padding, y + textHeight);
-			
-			for (int item : value) {
 
-				//checking current value
-				if (item == value.at(this->head)) glColor3f(0, 1, 0);
-				else glColor3f(1, 0, 0);
-
-				//toggle box
-				glVertex2f(x + (text.length() * 13) + gap + spacing, y);
-				glVertex2f(x + (text.length() * 13) + gap + spacing + 15, y);
-				glVertex2f(x + (text.length() * 13) + gap + spacing + 15, y + 15);
-				glVertex2f(x + (text.length() * 13) + gap + spacing, y + 15);
-				
-
-				spacing += 30;
-			}
 
 		break;
 
 
 		case BUTTON:
+
 
 			glVertex2f(x - padding, y - padding);
 			glVertex2f(x + (text.length() * 13), y - padding);
@@ -399,18 +389,22 @@ public:
 		case TOGGLE_BUTTON:
 
 			// text with a gap followed by a button that you can press.
+
+
+			int gap = 300;
+
 			glVertex2f(x - padding, y - padding);
 			glVertex2f(x + (text.length() * 13), y - padding);
 			glVertex2f(x + (text.length() * 13), y + textHeight);
 			glVertex2f(x - padding, y + textHeight);
 
+			//toggle box outline
 			if (!value.empty())
 			if (value.front() == 0)
 				glColor3f(1, 0, 0);
 			else
 				glColor3f(0, 1, 0);
 
-			//toggle box
 			glVertex2f(x + (text.length() * 13) + gap, y);
 			glVertex2f(x + (text.length() * 13) + gap + 15, y);
 			glVertex2f(x + (text.length() * 13) + gap + 15, y + 15);
@@ -480,16 +474,8 @@ public:
 						if (item.type == BUTTON)
 							handlerFunction(item.text, -1);
 						else if (item.type == TOGGLE_BUTTON) {
-							item.value.front() = item.value.front() == 0 ? 1 : 0;
-							handlerFunction(item.text, item.value.front());
-						}
-						else if (item.type == MULTI_BUTTON) {
-
-							if (item.head + 1 != item.value.size()) item.head++;
-							else item.head = 0;
-
-							handlerFunction(item.text, item.value.at(item.head));
-
+							item.value.at(0) = item.value.at(0) == 0 ? 1 : 0;
+							handlerFunction(item.text, item.value.at(0));
 						}
 
 						cursor->button = -1;
@@ -500,7 +486,8 @@ public:
 
 				item.render(x, y, padding, textHeight, cursor);
 
-				y += 30.0f;
+				if (item.type == SLIDER_BUTTON) y += 60.0f;
+				else y += 30.0f;
 			}
 
 			// Restoring y

@@ -319,7 +319,7 @@ public:
 enum menuTypes {
 
 	BUTTON = 1,
-	MULTI_BUTTON = 2,
+	MUTLI_BUTTON = 2,
 	INPUT_BUTTON = 3,
 	TOGGLE_BUTTON = 4,
 
@@ -333,7 +333,7 @@ public:
 	std::vector <int> value;
 	bool hovering = false;
 	int gap = 300;
-	int head = 0;
+
 
 	MenuOption(std::string text, int type, int value = -1) {
 		this->text = text;
@@ -361,7 +361,7 @@ public:
 
 		switch (type) {
 
-		case MULTI_BUTTON:
+		case MUTLI_BUTTON:
 			//Highlights option
 			glVertex2f(x - padding, y - padding);
 			glVertex2f(x + (text.length() * 13), y - padding);
@@ -371,7 +371,7 @@ public:
 			for (int item : value) {
 
 				//checking current value
-				if (item == value.at(this->head)) glColor3f(0, 1, 0);
+				if (item == this->value.front()) glColor3f(0, 1, 0);
 				else glColor3f(1, 0, 0);
 
 				//toggle box
@@ -379,7 +379,6 @@ public:
 				glVertex2f(x + (text.length() * 13) + gap + spacing + 15, y);
 				glVertex2f(x + (text.length() * 13) + gap + spacing + 15, y + 15);
 				glVertex2f(x + (text.length() * 13) + gap + spacing, y + 15);
-				
 
 				spacing += 30;
 			}
@@ -388,6 +387,7 @@ public:
 
 
 		case BUTTON:
+
 
 			glVertex2f(x - padding, y - padding);
 			glVertex2f(x + (text.length() * 13), y - padding);
@@ -480,16 +480,8 @@ public:
 						if (item.type == BUTTON)
 							handlerFunction(item.text, -1);
 						else if (item.type == TOGGLE_BUTTON) {
-							item.value.front() = item.value.front() == 0 ? 1 : 0;
-							handlerFunction(item.text, item.value.front());
-						}
-						else if (item.type == MULTI_BUTTON) {
-
-							if (item.head + 1 != item.value.size()) item.head++;
-							else item.head = 0;
-
-							handlerFunction(item.text, item.value.at(item.head));
-
+							item.value.at(0) = item.value.at(0) == 0 ? 1 : 0;
+							handlerFunction(item.text, item.value.at(0));
 						}
 
 						cursor->button = -1;

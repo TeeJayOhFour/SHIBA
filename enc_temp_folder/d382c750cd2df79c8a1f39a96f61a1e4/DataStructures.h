@@ -330,15 +330,16 @@ class MenuOption {
 public:
 	std::string text;
 	int type = BUTTON;
-	std::vector <int> value;
+	int defaultValue;
+	std::list <int> value;
 	bool hovering = false;
 	int gap = 300;
-	int head = 0;
+
 
 	MenuOption(std::string text, int type, int value = -1) {
 		this->text = text;
 		this->type = type;
-		this->value.push_back(value);
+		this->defaultValue = value;
 	}
 
 	void render(int x, int y, int padding, int textHeight, Position* cursor) {
@@ -369,9 +370,10 @@ public:
 			glVertex2f(x - padding, y + textHeight);
 			
 			for (int item : value) {
+				
 
 				//checking current value
-				if (item == value.at(this->head)) glColor3f(0, 1, 0);
+				if (item == this->defaultValue) glColor3f(0, 1, 0);
 				else glColor3f(1, 0, 0);
 
 				//toggle box
@@ -379,7 +381,6 @@ public:
 				glVertex2f(x + (text.length() * 13) + gap + spacing + 15, y);
 				glVertex2f(x + (text.length() * 13) + gap + spacing + 15, y + 15);
 				glVertex2f(x + (text.length() * 13) + gap + spacing, y + 15);
-				
 
 				spacing += 30;
 			}
@@ -388,6 +389,7 @@ public:
 
 
 		case BUTTON:
+
 
 			glVertex2f(x - padding, y - padding);
 			glVertex2f(x + (text.length() * 13), y - padding);
@@ -405,7 +407,7 @@ public:
 			glVertex2f(x - padding, y + textHeight);
 
 			if (!value.empty())
-			if (value.front() == 0)
+			if (defaultValue == 0)
 				glColor3f(1, 0, 0);
 			else
 				glColor3f(0, 1, 0);
@@ -480,15 +482,16 @@ public:
 						if (item.type == BUTTON)
 							handlerFunction(item.text, -1);
 						else if (item.type == TOGGLE_BUTTON) {
-							item.value.front() = item.value.front() == 0 ? 1 : 0;
+							item.value.front() = item.defaultValue == 0 ? 1 : 0;
 							handlerFunction(item.text, item.value.front());
 						}
 						else if (item.type == MULTI_BUTTON) {
+							item.value.push_back(item.value.front());
+							item.value.pop_front();
+							item.value.pop_front();
+							item.value.push_front(item.value.front());
 
-							if (item.head + 1 != item.value.size()) item.head++;
-							else item.head = 0;
-
-							handlerFunction(item.text, item.value.at(item.head));
+							handlerFunction(item.text, item.value.front());
 
 						}
 

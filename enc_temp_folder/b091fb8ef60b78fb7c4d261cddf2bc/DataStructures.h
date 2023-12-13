@@ -330,10 +330,10 @@ class MenuOption {
 public:
 	std::string text;
 	int type = BUTTON;
-	std::vector <int> value;
+	std::list <int> value;
 	bool hovering = false;
 	int gap = 300;
-	int head = 0;
+
 
 	MenuOption(std::string text, int type, int value = -1) {
 		this->text = text;
@@ -369,17 +369,18 @@ public:
 			glVertex2f(x - padding, y + textHeight);
 			
 			for (int item : value) {
-
-				//checking current value
-				if (item == value.at(this->head)) glColor3f(0, 1, 0);
-				else glColor3f(1, 0, 0);
-
-				//toggle box
-				glVertex2f(x + (text.length() * 13) + gap + spacing, y);
-				glVertex2f(x + (text.length() * 13) + gap + spacing + 15, y);
-				glVertex2f(x + (text.length() * 13) + gap + spacing + 15, y + 15);
-				glVertex2f(x + (text.length() * 13) + gap + spacing, y + 15);
 				
+				if (spacing != 0) {
+					//checking current value
+					if (item == this->value.front()) glColor3f(0, 1, 0);
+					else glColor3f(1, 0, 0);
+
+					//toggle box
+					glVertex2f(x + (text.length() * 13) + gap + spacing, y);
+					glVertex2f(x + (text.length() * 13) + gap + spacing + 15, y);
+					glVertex2f(x + (text.length() * 13) + gap + spacing + 15, y + 15);
+					glVertex2f(x + (text.length() * 13) + gap + spacing, y + 15);
+				}
 
 				spacing += 30;
 			}
@@ -388,6 +389,7 @@ public:
 
 
 		case BUTTON:
+
 
 			glVertex2f(x - padding, y - padding);
 			glVertex2f(x + (text.length() * 13), y - padding);
@@ -484,12 +486,9 @@ public:
 							handlerFunction(item.text, item.value.front());
 						}
 						else if (item.type == MULTI_BUTTON) {
-
-							if (item.head + 1 != item.value.size()) item.head++;
-							else item.head = 0;
-
-							handlerFunction(item.text, item.value.at(item.head));
-
+							item.value.push_back(item.value.front());
+							item.value.pop_front();
+							item.value.push_front(item.value.front());
 						}
 
 						cursor->button = -1;

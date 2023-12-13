@@ -319,7 +319,7 @@ public:
 enum menuTypes {
 
 	BUTTON = 1,
-	MULTI_BUTTON = 2,
+	SLIDER_BUTTON = 2,
 	INPUT_BUTTON = 3,
 	TOGGLE_BUTTON = 4,
 
@@ -331,9 +331,6 @@ public:
 	std::string text;
 	int type = BUTTON;
 	std::vector <int> value;
-	bool hovering = false;
-	int gap = 300;
-	int head = 0;
 
 	MenuOption(std::string text, int type, int value = -1) {
 		this->text = text;
@@ -341,53 +338,16 @@ public:
 		this->value.push_back(value);
 	}
 
-	void render(int x, int y, int padding, int textHeight, Position* cursor) {
+	void render(int x, int y, int padding, int textHeight) {
 
-		// checking if mouse is within menu text area.
-		if (cursor->x > x - padding && cursor->x < x + (this->text.length() * 13)
-			&& cursor->y > y - padding && cursor->y < y + textHeight) {
-
-			glColor3f(0, 1, 0);
-			hovering = true;
-		}
-		else {
-			hovering = false;
-			glColor3f(1, 0, 0);
-		}
-			
 		glBegin(GL_QUADS);
-		glNormal3f(0, 0, 0);
-		int spacing = 0;
-
+		
 		switch (type) {
 
-		case MULTI_BUTTON:
-			//Highlights option
-			glVertex2f(x - padding, y - padding);
-			glVertex2f(x + (text.length() * 13), y - padding);
-			glVertex2f(x + (text.length() * 13), y + textHeight);
-			glVertex2f(x - padding, y + textHeight);
-			
-			for (int item : value) {
-
-				//checking current value
-				if (item == value.at(this->head)) glColor3f(0, 1, 0);
-				else glColor3f(1, 0, 0);
-
-				//toggle box
-				glVertex2f(x + (text.length() * 13) + gap + spacing, y);
-				glVertex2f(x + (text.length() * 13) + gap + spacing + 15, y);
-				glVertex2f(x + (text.length() * 13) + gap + spacing + 15, y + 15);
-				glVertex2f(x + (text.length() * 13) + gap + spacing, y + 15);
-				
-
-				spacing += 30;
-			}
-
-		break;
-
-
 		case BUTTON:
+		case SLIDER_BUTTON:
+
+			glNormal3f(0, 0, 0);
 
 			glVertex2f(x - padding, y - padding);
 			glVertex2f(x + (text.length() * 13), y - padding);
@@ -399,18 +359,22 @@ public:
 		case TOGGLE_BUTTON:
 
 			// text with a gap followed by a button that you can press.
+			glNormal3f(0, 0, 0);
+
+			int gap = 300;
+
 			glVertex2f(x - padding, y - padding);
 			glVertex2f(x + (text.length() * 13), y - padding);
 			glVertex2f(x + (text.length() * 13), y + textHeight);
 			glVertex2f(x - padding, y + textHeight);
 
+			//toggle box outline
 			if (!value.empty())
 			if (value.front() == 0)
 				glColor3f(1, 0, 0);
 			else
 				glColor3f(0, 1, 0);
 
-			//toggle box
 			glVertex2f(x + (text.length() * 13) + gap, y);
 			glVertex2f(x + (text.length() * 13) + gap + 15, y);
 			glVertex2f(x + (text.length() * 13) + gap + 15, y + 15);
@@ -419,11 +383,17 @@ public:
 
 		break;
 
+
 		}
 		
 		glEnd();
 
 	}
+
+
+
+
+	
 
 };
 
@@ -440,7 +410,7 @@ public:
 	Position* cursor = nullptr;
 	std::vector <MenuOption> options;
 
-	using funcP = void (*)(std::string, int);
+	using funcP = void (*)(std::string);
 	funcP handlerFunction = nullptr;
 
 	Menu(int x, int y, Position& a) {
@@ -460,45 +430,35 @@ public:
 		if (displayed) {
 			int tempY = y;
 
-			for (MenuOption &item : options) {
+			for (MenuOption& item : options) {
 
 				glNormal3f(2, 0, 0);
 				glColor3f(1, 1, 1);
 				glRasterPos2f(x, y);
 
-				//Show text
 				const unsigned char* convertedStr = reinterpret_cast <const unsigned char*> (item.text.c_str());
 				glutBitmapString(GLUT_BITMAP_HELVETICA_18, convertedStr);
 
-				// Render the button itself.
-				if (item.hovering) {
+				// checking if mouse is within menu text area.
+				if (cursor->x > x - padding && cursor->x < x + (item.text.length() * 13)
+					&& cursor->y > y - padding && cursor->y < y + textHeight) {
+					glColor3f(0, 1, 0);
 
 					// handle click
 					if (cursor->buttonState == 0 && cursor->button == 0) {
 						std::cout << "Clicked on: " << item.text << std::endl;
-
 						if (item.type == BUTTON)
-							handlerFunction(item.text, -1);
-						else if (item.type == TOGGLE_BUTTON) {
-							item.value.front() = item.value.front() == 0 ? 1 : 0;
-							handlerFunction(item.text, item.value.front());
-						}
-						else if (item.type == MULTI_BUTTON) {
-
-							if (item.head + 1 != item.value.size()) item.head++;
-							else item.head = 0;
-
-							handlerFunction(item.text, item.value.at(item.head));
-
-						}
+							handlerFunction(item.text);
+						else if (item.type == TOGGLE_BUTTON)
+							item.value.at(0) = item.value.at(0) == 0 ? 1 : 0;
 
 						cursor->button = -1;
 						cursor->buttonState = -1;
 					}
-
 				}
+				else glColor3f(1, 0, 0);
 
-				item.render(x, y, padding, textHeight, cursor);
+				item.render(x, y, padding, textHeight);
 
 				y += 30.0f;
 			}

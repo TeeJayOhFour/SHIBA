@@ -8,7 +8,6 @@
 #include <string>
 #include <stdlib.h>
 #include <vector>
-#include <list>
 #include <GL/freeglut.h>
 #include <iostream>
 
