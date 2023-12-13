@@ -35,6 +35,7 @@ void menu();
 void draw();
 void shoot();
 void camera();
+void options();
 void lighting();
 void devScreen();
 void updateHUD();
@@ -56,7 +57,6 @@ void checkForInteraction(Position& entity);
 void maintainAspectRatio(int width, int height);
 void listenForSpecialKeys(int key, int x, int y);
 void handleMainMenuInteraction(std::string option);
-void handleOptionInteraction(std::string option);
 bool collisionCheck(int direction, float x, float z);
 void listenForNormalKeys(unsigned char key, int x, int y);
 void listenForMouseClick(int button, int state, int x, int y);
@@ -78,21 +78,13 @@ void initMenu() {
 
 	Main.setHandler(handleMainMenuInteraction);
 	Main.options = menuOptions;
+	Main.show();
 
-	// Reusing the same vector because why not
-	menuOptions.clear();
+	//Menu Options();
 
-	menuOptions.push_back({ "Master Sound Volume", SLIDER_BUTTON, 100 });	//100 by default
-	menuOptions.push_back({ "Mouse Sensitivity", SLIDER_BUTTON, 5 });	//5 by default
-	menuOptions.push_back({ "Fullscreen", TOGGLE_BUTTON, 0 });	//off by default
-	menuOptions.push_back({ "Show Blood", TOGGLE_BUTTON, 1 });	//on by default
 
-	Menu Options(100, 150, crosshair);
-	Options.setHandler(handleOptionInteraction);
-	Options.options = menuOptions;
 
 	menuQueue.push(Main);
-	menuQueue.push(Options);
 
 }
 
@@ -387,6 +379,9 @@ void renderScene(void) {
 		case 0:
 			menu();
 			break;
+			// Options.
+		case 1:
+			options();
 		default:
 			renderText(0, glutGet(GLUT_WINDOW_HEIGHT) / 2, 1, 0, 0, "Error Assigning Scene. | Scene is null");
 			break;
@@ -411,17 +406,16 @@ void menu() {
 
 	toggleOverlayMode(true);
 
-		menuQueue.front().show();
+	menuQueue.front().show();
 
 	toggleOverlayMode(false);
 
 }
 
 // reads and writes for various game settings
-void handleOptionInteraction(std::string option) {
+void options() {
 
 	//TODO: Create a separate class system for MENUs
-
 	
 	// List of options
 	// 
@@ -430,7 +424,7 @@ void handleOptionInteraction(std::string option) {
 	// Cencorship	ON/OFF	default (off)
 	// Master Sound Volume	0-100	Slider	(default 100)
 	
-	//renderText(0, glutGet(GLUT_WINDOW_HEIGHT) / 2, 1, 0, 0, "Options go here");
+	renderText(0, glutGet(GLUT_WINDOW_HEIGHT) / 2, 1, 0, 0, "Options go here");
 
 
 }
@@ -438,16 +432,9 @@ void handleOptionInteraction(std::string option) {
 // Contains all the logic for displaying menu options and all
 void handleMainMenuInteraction(std::string option) {
 
-	//? Maybe make an exit confirmation?
 	if (option == "EXIT") exit(0);
 
-	if (option == "OPTIONS") {
-
-		//Putting the main menu back on queue before going to options.
-		menuQueue.push(menuQueue.front());
-		menuQueue.pop();
-
-	}
+	if (option == "OPTIONS")  currentScene = 1;
 
 	if (option == "START GAME") currentScene = -1;
 

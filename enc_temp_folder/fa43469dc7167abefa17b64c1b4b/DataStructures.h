@@ -321,7 +321,6 @@ enum menuTypes {
 	BUTTON = 1,
 	SLIDER_BUTTON = 2,
 	INPUT_BUTTON = 3,
-	TOGGLE_BUTTON = 4,
 
 };
 
@@ -332,10 +331,10 @@ public:
 	int type = BUTTON;
 	std::vector <int> value;
 
-	MenuOption(std::string text, int type, int value = -1) {
+	MenuOption(std::string text, int type) {
 		this->text = text;
 		this->type = type;
-		this->value.push_back(value);
+
 	}
 
 	void render(int x, int y, int padding, int textHeight) {
@@ -345,8 +344,6 @@ public:
 		switch (type) {
 
 		case BUTTON:
-		case TOGGLE_BUTTON:
-		case SLIDER_BUTTON:
 
 			glNormal3f(0, 0, 0);
 
@@ -356,8 +353,6 @@ public:
 			glVertex2f(x - padding, y + textHeight);
 
 		break;
-
-
 
 
 		}

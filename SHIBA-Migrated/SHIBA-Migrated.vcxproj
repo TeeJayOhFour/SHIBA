@@ -173,7 +173,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Config.h" />
-    <ClInclude Include="MenuHandler.h" />
     <ClInclude Include="PlayerPhysics.h" />
     <ClInclude Include="SHIBA.h" />
     <ClInclude Include="TextureLoader.h" />
