@@ -7,6 +7,7 @@
 #include "DataStructures.h"
 
 // Globals
+
 //Player navigation info
 Motion motion = { false, false, false, false };
 Poles facing = { false, false, false, false };
@@ -29,10 +30,10 @@ std::unordered_map <int, Position> animationQueue;
 std::unordered_map <int, GLuint> textureCollection;
 std::unordered_map <int, Position> bulletAnimation;
 std::unordered_map <std::string, ShibaObject> bulletCollection;
-std::unordered_map <std::string, ShibaObject> enemyCollection;
-std::unordered_map <std::string, ShibaObject> bulletMap;
 
 // Single enemy for testing.
+
+std::unordered_map <std::string, ShibaObject> enemyCollection;
 
 
 
@@ -1404,7 +1405,6 @@ void bulletModel(ShibaObject a) {
 		center.z + a.offset.z);
 	glutSolidCube(1.0f);
 	glPopMatrix();
-	
 	//putting it back to scene origin
 
 }
@@ -1455,7 +1455,6 @@ void shoot() {
 
 	// calculating next coord.
 	ShibaObject bullet(cameraPosition.x, cameraPosition.y, cameraPosition.z);
-
 	bullet.objectName = "Bullet#" + std::to_string(bulletCollection.size());
 
 	// adding only 1 quad as the object center/bullet hitbox
@@ -1482,7 +1481,6 @@ void shoot() {
 	target.x = newX;
 	target.z = -newZ;
 	target.y = newY;
-
 	bulletAnimation.insert_or_assign(id, target);
 
 }
@@ -1518,13 +1516,12 @@ void enemyPathing() {
 
 	}
 
-	// Enemy path finding algo goes here
+	//	Enemy path finding algo goes here
 	// exit if there's nothing to iterate
 
 	if (enemyCollection.empty()) return;
 
 	for (auto& item : enemyCollection) {
-
 
 		ShibaQuad front = item.second.pathing.front();
 		ShibaQuad current = {
@@ -1533,24 +1530,60 @@ void enemyPathing() {
 			item.second.vertexCol.at(0).z
 		};
 
-		Position difference = front.toPosition() - current.toPosition();
+		std::cout << "Current: " << current.x << " | " << current.z << std::endl;
+		std::cout << "Next: " << front.x << " | " << front.z << std::endl;
+
+
+		Position difference = (current.toPosition() - front.toPosition());
+
+		std::cout << "Diference: " << difference.toString() << std::endl;
+		std::cout << "Diference abs: " << difference.absolute().x << " | " << difference.absolute().z << std::endl;
 		
-		//TODO Make this a linear animation..
-		item.second.offset += (difference / 100.0f);
+		item.second.offset += difference / (ANIMATIONSTEP);
 
-		std::cout << difference.toString() << std::endl;
+		std::cout << "Offset: " << item.second.offset.x << " | " << item.second.offset.z << std::endl;
 
-		if ((front.toPosition() - (current.toPosition() + item.second.offset)).absolute() <= 0.01f) {
+		if (difference.absolute() <= 0.01) {
 
 			item.second.vertexCol.at(0) = item.second.pathing.front();
-			item.second.offset = { 0.0f, 0.0f, 0.0f };
+			std::cout << "Reached end of animation point" << std::endl;
 
-			if (item.second.loopPath) 
+
+			if (item.second.loopPath) {
 				item.second.pathing.push(front);
-			
+			}
+
 			item.second.pathing.pop();
 		}
 
+
+		//Position difference = (current - front).toPosition();
+		//item.second.offset = difference/50.0f;
+
+		//// this doesn't get triggered properly.
+		//// mayve the current/front doesn't get updated correctly?
+		//if (difference.absolute() <= 0.01) {
+
+		//	std::cout << "offset: " << enemyCollection.at(item.first).offset.x << " " << enemyCollection.at(item.first).offset.z << std::endl;
+		//	std::cout << "Front: " << front.x << " " << front.z << std::endl;
+		//	std::cout << "Current: " << current.x << " " << current.z << std::endl;
+		//	std::cout << "Difference: " << difference.x << " " << difference.z << std::endl;
+		//	std::cout << "Difference abs: " << difference.absolute().x << " " << difference.absolute().z << std::endl;
+
+		//	item.second.vertexCol.clear();
+		//	item.second.vertexCol.push_back(front);
+		//	item.second.offset = {0.0f, 0.0f, 0.0f};
+
+
+		//	if (item.second.loopPath) {
+		//		item.second.pathing.push(front);
+		//	}
+
+		//	item.second.pathing.pop();
+
+		//}
+
+		// pathfinding animation/steps 
 		item.second.loadGlutSolids();
 
 	}

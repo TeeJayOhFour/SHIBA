@@ -73,11 +73,11 @@ struct Position {
 
 	Position& operator / (const float& a) {
 
-		this->x /= a;
-		this->y /= a;
-		this->z /= a;
-		this->yaw /= a;
-		this->pitch /= a;
+		x /= a;
+		y /= a;
+		z /= a;
+		yaw /= a;
+		pitch /= a;
 
 		return *this;
 	}
@@ -100,17 +100,6 @@ struct Position {
 		z -= a.z;
 		yaw -= a.yaw;
 		pitch -= a.pitch;
-
-		return *this;
-	}	
-
-	Position& operator + (const Position& a) {
-
-		x += a.x;
-		y += a.y;
-		z += a.z;
-		yaw += a.yaw;
-		pitch += a.pitch;
 
 		return *this;
 	}
@@ -152,10 +141,10 @@ struct Position {
 	std::string toString() {
 		return (
 			"X: " + std::to_string(this->x) +
-			" Y: " + std::to_string(this->y) +
-			" Z: " + std::to_string(this->z) +
-			" Yaw: " + std::to_string(this->yaw) +
-			" Pitch: " + std::to_string(this->pitch)
+			"Y: " + std::to_string(this->y) +
+			"Z: " + std::to_string(this->z) +
+			"Yaw: " + std::to_string(this->yaw) +
+			"Pitch: " + std::to_string(this->pitch)
 			);
 	}
 
@@ -219,8 +208,8 @@ struct ShibaQuad {
 	std::string toString() {
 		return (
 			"X: " + std::to_string(this->x) +
-			" Y: " + std::to_string(this->y) +
-			" Z: " + std::to_string(this->z));
+			"Y: " + std::to_string(this->y) +
+			"Z: " + std::to_string(this->z));
 	}
 
 

@@ -1534,13 +1534,15 @@ void enemyPathing() {
 		};
 
 		Position difference = front.toPosition() - current.toPosition();
+
+		difference = (difference / 1000.0f);
 		
 		//TODO Make this a linear animation..
-		item.second.offset += (difference / 100.0f);
+		item.second.offset += difference;
 
 		std::cout << difference.toString() << std::endl;
 
-		if ((front.toPosition() - (current.toPosition() + item.second.offset)).absolute() <= 0.01f) {
+		if ((difference - item.second.offset).absolute() <= 0.01) {
 
 			item.second.vertexCol.at(0) = item.second.pathing.front();
 			item.second.offset = { 0.0f, 0.0f, 0.0f };

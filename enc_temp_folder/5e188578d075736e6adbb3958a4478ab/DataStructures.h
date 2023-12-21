@@ -24,11 +24,11 @@ enum Directions {
 
 struct Position {
 
-	float x = 0.0;
-	float y = 0.0;
-	float z = 0.0;
-	float yaw = 0.0;
-	float pitch = 0.0;
+	float x = 0;
+	float y = 0;
+	float z = 0;
+	float yaw = 0;
+	float pitch = 0;
 	// used for checking if a specific button is pressed.
 	int button = -1;
 	int buttonState = -1;
@@ -73,11 +73,11 @@ struct Position {
 
 	Position& operator / (const float& a) {
 
-		this->x /= a;
-		this->y /= a;
-		this->z /= a;
-		this->yaw /= a;
-		this->pitch /= a;
+		x /= a;
+		y /= a;
+		z /= a;
+		yaw /= a;
+		pitch /= a;
 
 		return *this;
 	}
@@ -92,29 +92,6 @@ struct Position {
 
 		return *this;
 	}
-
-	Position& operator - (const Position& a) {
-
-		x -= a.x;
-		y -= a.y;
-		z -= a.z;
-		yaw -= a.yaw;
-		pitch -= a.pitch;
-
-		return *this;
-	}	
-
-	Position& operator + (const Position& a) {
-
-		x += a.x;
-		y += a.y;
-		z += a.z;
-		yaw += a.yaw;
-		pitch += a.pitch;
-
-		return *this;
-	}
-
 	Position& operator += (const float& a) {
 
 		x += a;
@@ -149,37 +126,25 @@ struct Position {
 
 	}
 
-	std::string toString() {
-		return (
-			"X: " + std::to_string(this->x) +
-			" Y: " + std::to_string(this->y) +
-			" Z: " + std::to_string(this->z) +
-			" Yaw: " + std::to_string(this->yaw) +
-			" Pitch: " + std::to_string(this->pitch)
-			);
-	}
 
 
 };
 
 struct ShibaQuad {
 
-	float x = 0.0;
-	float y = 0.0;
-	float z = 0.0;
+	float x;
+	float y;
+	float z;
 	float normal[3];
 
 	ShibaQuad& translateTile(const int direction) {
 
 		switch (direction) {
 
-			case UP: this->x += 10.0f; break;
-
-			case DOWN: this->x -= 10.0f; break;
-
-			case LEFT: this->z -= 10.0f; break;
-
-			case RIGHT: this->z += 10.0f; break;
+			case UP: this->x += TILESIZE; break;
+			case DOWN: this->x -= TILESIZE; break;
+			case LEFT: this->z -= TILESIZE; break;
+			case RIGHT: this->z += TILESIZE; break;
 
 		}
 
@@ -198,9 +163,9 @@ struct ShibaQuad {
 
 	ShibaQuad& operator / (const ShibaQuad& a) {
 
-		this->x /= a.x;
-		this->y /= a.y;
-		this->z /= a.z;
+		x /= a.x;
+		y /= a.y;
+		z /= a.z;
 
 		return *this;
 	}
@@ -214,13 +179,6 @@ struct ShibaQuad {
 
 		return obj;
 
-	}
-
-	std::string toString() {
-		return (
-			"X: " + std::to_string(this->x) +
-			" Y: " + std::to_string(this->y) +
-			" Z: " + std::to_string(this->z));
 	}
 
 
@@ -286,6 +244,7 @@ public:
 	int health = 100;
 
 	bool loopPath = false;
+	int currentPathIndex = 0;
 	std::queue <ShibaQuad> pathing;
 
 	using loadFunction = void (*)(ShibaObject);

@@ -1540,7 +1540,7 @@ void enemyPathing() {
 
 		std::cout << difference.toString() << std::endl;
 
-		if ((front.toPosition() - (current.toPosition() + item.second.offset)).absolute() <= 0.01f) {
+		if (front.toPosition() - (current.toPosition() + item.second.offset) <= 0.01f) {
 
 			item.second.vertexCol.at(0) = item.second.pathing.front();
 			item.second.offset = { 0.0f, 0.0f, 0.0f };

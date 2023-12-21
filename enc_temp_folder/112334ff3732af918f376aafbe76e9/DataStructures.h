@@ -73,11 +73,11 @@ struct Position {
 
 	Position& operator / (const float& a) {
 
-		this->x /= a;
-		this->y /= a;
-		this->z /= a;
-		this->yaw /= a;
-		this->pitch /= a;
+		x /= a;
+		y /= a;
+		z /= a;
+		yaw /= a;
+		pitch /= a;
 
 		return *this;
 	}
@@ -135,6 +135,40 @@ struct Position {
 		pitch = fabs(pitch);
 
 		return *this;
+
+	}
+	
+	Position linearSteps(const float& a) {
+
+		Position res;
+
+		//if non-zero value
+		res.x =
+		fabs(x) != 0 ?
+			res.x > 0 ? a : (0.0 - a)
+		: 0;
+
+		res.y =
+		fabs(y) != 0 ?
+			res.y < 0 ? a : (0.0 - a)
+		: 0;
+
+		res.z =
+		fabs(z) != 0 ?
+			res.z > 0 ? a : (0.0 - a)
+		: 0;
+
+		res.yaw =
+		fabs(yaw) != 0 ?
+			res.yaw < 0 ? a : (0.0 - a)
+		: 0;
+
+		res.pitch =
+		fabs(pitch) != 0 ?
+			res.pitch < 0 ? a : (0.0 - a)
+		: 0;
+
+		return res;
 
 	}
 

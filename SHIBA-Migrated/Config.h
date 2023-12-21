@@ -12,8 +12,11 @@
 #include <GL/freeglut.h>
 #include <iostream>
 
-#define SENSITIVITY 50.0f	//Higher is slower.
+#define TITLE "SHIBA Engine v1.2 by TJ | Copyright 2023"
+// Stupidly Horrendous Implementation of Basic Animations
+
 #define SENSITIVITY_HIGH 80.0f	
+#define SENSITIVITY_MID 50.0f	//Higher is slower.
 #define SENSITIVITY_LOW 20.0f	
 #define FPS 60
 #define TILESIZE 5.0f	//should be 5
@@ -28,6 +31,9 @@
 #define TRAVEL 300
 #define WIDTH 16*80
 #define HEIGHT 9*80
+
+
+static float mouseSpeed = SENSITIVITY_MID;
 
 static int lastKey = 0;
 static bool track = false;

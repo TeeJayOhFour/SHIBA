@@ -1,12 +1,9 @@
 #pragma once
-
-#define TITLE "SHIBA Engine v1.1 by TJ | Copyright 2023"
-// Stupidly Horrendous Implementation of Basic Animations
-
 #include "Config.h"
 #include "DataStructures.h"
 
 // Globals
+
 //Player navigation info
 Motion motion = { false, false, false, false };
 Poles facing = { false, false, false, false };
@@ -29,10 +26,10 @@ std::unordered_map <int, Position> animationQueue;
 std::unordered_map <int, GLuint> textureCollection;
 std::unordered_map <int, Position> bulletAnimation;
 std::unordered_map <std::string, ShibaObject> bulletCollection;
-std::unordered_map <std::string, ShibaObject> enemyCollection;
-std::unordered_map <std::string, ShibaObject> bulletMap;
 
 // Single enemy for testing.
+
+std::unordered_map <std::string, ShibaObject> enemyCollection;
 
 
 
@@ -1404,7 +1401,6 @@ void bulletModel(ShibaObject a) {
 		center.z + a.offset.z);
 	glutSolidCube(1.0f);
 	glPopMatrix();
-	
 	//putting it back to scene origin
 
 }
@@ -1455,7 +1451,6 @@ void shoot() {
 
 	// calculating next coord.
 	ShibaObject bullet(cameraPosition.x, cameraPosition.y, cameraPosition.z);
-
 	bullet.objectName = "Bullet#" + std::to_string(bulletCollection.size());
 
 	// adding only 1 quad as the object center/bullet hitbox
@@ -1482,7 +1477,6 @@ void shoot() {
 	target.x = newX;
 	target.z = -newZ;
 	target.y = newY;
-
 	bulletAnimation.insert_or_assign(id, target);
 
 }
@@ -1525,7 +1519,6 @@ void enemyPathing() {
 
 	for (auto& item : enemyCollection) {
 
-
 		ShibaQuad front = item.second.pathing.front();
 		ShibaQuad current = {
 			item.second.vertexCol.at(0).x,
@@ -1533,21 +1526,24 @@ void enemyPathing() {
 			item.second.vertexCol.at(0).z
 		};
 
-		Position difference = front.toPosition() - current.toPosition();
-		
-		//TODO Make this a linear animation..
-		item.second.offset += (difference / 100.0f);
+		Position difference = front.toPosition() - (current.toPosition() + item.second.offset);
 
-		std::cout << difference.toString() << std::endl;
+		item.second.offset += difference.linearSteps(0.1f);
 
-		if ((front.toPosition() - (current.toPosition() + item.second.offset)).absolute() <= 0.01f) {
+		std::cout << difference.linearSteps(0.1f).toString() << std::endl;
 
-			item.second.vertexCol.at(0) = item.second.pathing.front();
-			item.second.offset = { 0.0f, 0.0f, 0.0f };
+		if (difference.absolute() <= 0.01) {
+
+			std::cout << "NEXT: " << front.x << front.z << std::endl;
+			std::cout << difference.toString() << std::endl;
+
+			//item.second.vertexCol.at(0) = item.second.pathing.front();
+			//item.second.offset = { 0.0f, 0.0f, 0.0f };
 
 			if (item.second.loopPath) 
 				item.second.pathing.push(front);
 			
+
 			item.second.pathing.pop();
 		}
 

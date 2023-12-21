@@ -7,6 +7,7 @@
 #include "DataStructures.h"
 
 // Globals
+
 //Player navigation info
 Motion motion = { false, false, false, false };
 Poles facing = { false, false, false, false };
@@ -16,8 +17,7 @@ std::queue <Level> levelQueue;
 std::queue <Menu> menuQueue;
 std::queue <std::string> debugInfoQueue;
 Position cameraPosition;	//camera cords
-Entity player(cameraPosition);	//incorporate this throughout the whole code. remove cameraPostion
-//? OR just add convert the camera into a ShibaObject.
+Entity player(cameraPosition);
 
 Position levelBounds;
 std::vector <Position> possibleSpawns;
@@ -29,12 +29,6 @@ std::unordered_map <int, Position> animationQueue;
 std::unordered_map <int, GLuint> textureCollection;
 std::unordered_map <int, Position> bulletAnimation;
 std::unordered_map <std::string, ShibaObject> bulletCollection;
-std::unordered_map <std::string, ShibaObject> enemyCollection;
-std::unordered_map <std::string, ShibaObject> bulletMap;
-
-// Single enemy for testing.
-
-
 
 bool levelSpawning = false;
 
@@ -50,25 +44,24 @@ void spawnPlayer();
 void renderScene();
 void idleLoop(int);
 void resetCamera();
-void enemyPathing();
 void bulletPhysics();
 void renderWorldBox();
 void renderGameElements();
 void playQueuedAnimations();
 void addSpawns(int x, int z);
-void enemyModel(ShibaObject a);
 int randomInt(int low, int high);
 void interactWithObj(int objectID);
+void enemyPathing();
 void initLevels(std::queue <Level> queue);
 void queueAnimation(int id, int x, int z);
 void listenForMouseMovement(int x, int y);
 void checkForInteraction(Position& entity);
 void maintainAspectRatio(int width, int height);
 void listenForSpecialKeys(int key, int x, int y);
+void handleMainMenuInteraction(std::string option, int value);
+void handleOptionInteraction(std::string option, int value);
 bool collisionCheck(int direction, float x, float z);
 void listenForNormalKeys(unsigned char key, int x, int y);
-void handleOptionInteraction(std::string option, int value);
-void handleMainMenuInteraction(std::string option, int value);
 void listenForMouseClick(int button, int state, int x, int y);
 void listenForNormalKeysRelease(unsigned char key, int x, int y);
 void renderText(float x, float y, int r, int g, int b, const char* string);
@@ -327,7 +320,6 @@ static int launch(int argc, char** argv) {
 	cameraPosition.z = 0.0;
 	cameraPosition.pitch = 0.0;
 	cameraPosition.yaw = 270.0; //facing negative X
-
 
 	if (possibleSpawns.size() == 0)
 		throw std::invalid_argument(levelQueue.front().name + " doesn't have a spawn location. SHIBA shutting down...");
@@ -829,7 +821,6 @@ void listenForSpecialKeys(int key, int x, int y) {
 	case 102: //RIGHT KEY
 		DevHudY += 10.00f;
 		std::cout << DevHudY << std::endl;
-
 		break;
 	case 103: //DOWN KEY
 		cameraPosition.y -= 0.10f;
@@ -1398,13 +1389,12 @@ void bulletModel(ShibaObject a) {
 	// moving the render point to elsewhere
 	glPushMatrix();
 	glColor3f(1, 0, 0);	//bullets are red for now
-	glTranslatef(
+	glTranslated(
 		center.x + a.offset.x,
 		center.y + a.offset.y,
 		center.z + a.offset.z);
 	glutSolidCube(1.0f);
 	glPopMatrix();
-	
 	//putting it back to scene origin
 
 }
@@ -1455,7 +1445,6 @@ void shoot() {
 
 	// calculating next coord.
 	ShibaObject bullet(cameraPosition.x, cameraPosition.y, cameraPosition.z);
-
 	bullet.objectName = "Bullet#" + std::to_string(bulletCollection.size());
 
 	// adding only 1 quad as the object center/bullet hitbox
@@ -1482,7 +1471,6 @@ void shoot() {
 	target.x = newX;
 	target.z = -newZ;
 	target.y = newY;
-
 	bulletAnimation.insert_or_assign(id, target);
 
 }
@@ -1490,107 +1478,32 @@ void shoot() {
 void enemyPathing() {
 
 	//	Spawn new enemies if needed.
-	if (levelSpawning && enemyCollection.size() < 1) {
-
-		ShibaObject tempEnemy(50.0, GROUNDLEVEL, 50.0);
-
-		tempEnemy.vertexCol.push_back(
-			{ 50.0, GROUNDLEVEL, 50.0 , {0.0, -1.0f, 0.0} }
-		);
-
-		tempEnemy.objectName = std::to_string(tempEnemy.vertexCol.at(0).x) + std::to_string(tempEnemy.vertexCol.at(0).z);
-		tempEnemy.setLoadGlutFunction(enemyModel);
-
-		//	for now just go around in a circle
-		//	each position is a quad since we don't need anything else.
-		//	using a function to calculate the tile adjacent to position passed.
-
-		tempEnemy.pathing.push(tempEnemy.vertexCol.at(0).translateTile(DOWN));
-		tempEnemy.pathing.push(tempEnemy.vertexCol.at(0).translateTile(RIGHT));
-		tempEnemy.pathing.push(tempEnemy.vertexCol.at(0).translateTile(UP));
-		tempEnemy.pathing.push(tempEnemy.vertexCol.at(0).translateTile(LEFT));
-		tempEnemy.pathing.push(tempEnemy.vertexCol.at(0).translateTile(DOWN));
-
-		tempEnemy.loopPath = true;
-
-		enemyCollection.insert_or_assign(tempEnemy.objectName, tempEnemy);
-		std::cout << "Added enemy: " << tempEnemy.objectName << std::endl;
-
-	}
-
-	// Enemy path finding algo goes here
-	// exit if there's nothing to iterate
-
-	if (enemyCollection.empty()) return;
-
-	for (auto& item : enemyCollection) {
-
-
-		ShibaQuad front = item.second.pathing.front();
-		ShibaQuad current = {
-			item.second.vertexCol.at(0).x,
-			item.second.vertexCol.at(0).y,
-			item.second.vertexCol.at(0).z
-		};
-
-		Position difference = front.toPosition() - current.toPosition();
+	if (levelSpawning) {
 		
-		//TODO Make this a linear animation..
-		item.second.offset += (difference / 100.0f);
+		//	For now rendering a white plane as enemy. Apply texture over it later.
+		glColor3f(1,1,1);
 
-		std::cout << difference.toString() << std::endl;
-
-		if ((front.toPosition() - (current.toPosition() + item.second.offset)).absolute() <= 0.01f) {
-
-			item.second.vertexCol.at(0) = item.second.pathing.front();
-			item.second.offset = { 0.0f, 0.0f, 0.0f };
-
-			if (item.second.loopPath) 
-				item.second.pathing.push(front);
-			
-			item.second.pathing.pop();
-		}
-
-		item.second.loadGlutSolids();
-
-	}
+		Position enemyPos = {50, GROUNDLEVEL, 50};
 
 
-}
+		//glTranslatef(enemyPos.x, enemyPos.y, enemyPos.z);
 
-void enemyModel(ShibaObject a) {
-
-	float enemyWidth = 5;
-
-	// any custom object must have a single ShibaQuad point as center.
-	ShibaQuad center;
-
-	center = a.vertexCol.at(0);
-
-	//	For now rendering a white plane as enemy. Apply texture over it later.
-	glColor3f(1, 1, 1);
-
-	glPushMatrix();
-
-		glTranslatef(
-			center.x + a.offset.x,
-			center.y + a.offset.y, 
-			center.z + a.offset.z
-		);
-		glRotatef(cameraPosition.yaw + 90, 0, 1, 0);	//rorate the object with respect to camera yaw
-
+		glRotatef(DevHudY, 0, 1, 0);    //Along Y axis
+		glCullFace(false);
+		glDisable(GL_CULL_FACE);
 		glBegin(GL_QUADS);
 			glNormal3f(0, -1, 0);
-
-			glVertex3f(0, 0, -enemyWidth / 2.0f);
-			glVertex3f(0, 0, enemyWidth / 2.0f);
-			glVertex3f(0, 10, enemyWidth / 2.0f);
-			glVertex3f(0, 10, -enemyWidth / 2.0f);
-
+			glVertex3f(enemyPos.x, enemyPos.y, enemyPos.z);
+			glVertex3f(enemyPos.x, enemyPos.y, enemyPos.z + 5);
+			glVertex3f(enemyPos.x, enemyPos.y + 10, enemyPos.z + 5);
+			glVertex3f(enemyPos.x, enemyPos.y + 10, enemyPos.z);
 		glEnd();
 
-	glPopMatrix();
+	}
+
+	//	Enemy path finding algo goes here
 
 
+
+	// Queue pathfinding animation/steps here
 }
-

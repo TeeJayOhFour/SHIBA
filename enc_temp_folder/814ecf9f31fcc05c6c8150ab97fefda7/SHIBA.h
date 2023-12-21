@@ -7,6 +7,7 @@
 #include "DataStructures.h"
 
 // Globals
+
 //Player navigation info
 Motion motion = { false, false, false, false };
 Poles facing = { false, false, false, false };
@@ -29,10 +30,10 @@ std::unordered_map <int, Position> animationQueue;
 std::unordered_map <int, GLuint> textureCollection;
 std::unordered_map <int, Position> bulletAnimation;
 std::unordered_map <std::string, ShibaObject> bulletCollection;
-std::unordered_map <std::string, ShibaObject> enemyCollection;
-std::unordered_map <std::string, ShibaObject> bulletMap;
 
 // Single enemy for testing.
+
+std::unordered_map <std::string, ShibaObject> enemyCollection;
 
 
 
@@ -829,7 +830,6 @@ void listenForSpecialKeys(int key, int x, int y) {
 	case 102: //RIGHT KEY
 		DevHudY += 10.00f;
 		std::cout << DevHudY << std::endl;
-
 		break;
 	case 103: //DOWN KEY
 		cameraPosition.y -= 0.10f;
@@ -1404,7 +1404,6 @@ void bulletModel(ShibaObject a) {
 		center.z + a.offset.z);
 	glutSolidCube(1.0f);
 	glPopMatrix();
-	
 	//putting it back to scene origin
 
 }
@@ -1455,7 +1454,6 @@ void shoot() {
 
 	// calculating next coord.
 	ShibaObject bullet(cameraPosition.x, cameraPosition.y, cameraPosition.z);
-
 	bullet.objectName = "Bullet#" + std::to_string(bulletCollection.size());
 
 	// adding only 1 quad as the object center/bullet hitbox
@@ -1482,7 +1480,6 @@ void shoot() {
 	target.x = newX;
 	target.z = -newZ;
 	target.y = newY;
-
 	bulletAnimation.insert_or_assign(id, target);
 
 }
@@ -1514,44 +1511,37 @@ void enemyPathing() {
 		tempEnemy.loopPath = true;
 
 		enemyCollection.insert_or_assign(tempEnemy.objectName, tempEnemy);
-		std::cout << "Added enemy: " << tempEnemy.objectName << std::endl;
+
 
 	}
 
-	// Enemy path finding algo goes here
+	//	Enemy path finding algo goes here
 	// exit if there's nothing to iterate
-
 	if (enemyCollection.empty()) return;
 
-	for (auto& item : enemyCollection) {
+	for (const auto& item : enemyCollection) {
 
+		ShibaQuad front = enemyCollection.at(item.first).pathing.front();
+		ShibaQuad current = enemyCollection.at(item.first).vertexCol.at(0);
 
-		ShibaQuad front = item.second.pathing.front();
-		ShibaQuad current = {
-			item.second.vertexCol.at(0).x,
-			item.second.vertexCol.at(0).y,
-			item.second.vertexCol.at(0).z
-		};
+		Position difference = (current - front).toPosition();
+		enemyCollection.at(item.first).offset = difference / ANIMATIONSTEP;
 
-		Position difference = front.toPosition() - current.toPosition();
-		
-		//TODO Make this a linear animation..
-		item.second.offset += (difference / 100.0f);
+		if (difference.absolute() <= 0.01) {
 
-		std::cout << difference.toString() << std::endl;
-
-		if ((front.toPosition() - (current.toPosition() + item.second.offset)).absolute() <= 0.01f) {
-
-			item.second.vertexCol.at(0) = item.second.pathing.front();
-			item.second.offset = { 0.0f, 0.0f, 0.0f };
-
-			if (item.second.loopPath) 
-				item.second.pathing.push(front);
+			enemyCollection.at(item.first).offset = front.toPosition();
 			
-			item.second.pathing.pop();
+			if (enemyCollection.at(item.first).loopPath) 
+				enemyCollection.at(item.first).pathing.push(front);
+
+			enemyCollection.at(item.first).pathing.pop();
+
+
 		}
 
-		item.second.loadGlutSolids();
+		// pathfinding animation/steps 
+
+		enemyCollection.at(item.first).loadGlutSolids();
 
 	}
 
