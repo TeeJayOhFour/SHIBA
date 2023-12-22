@@ -356,23 +356,21 @@ public:
 		//checking if it's a custom object.
 
 		if (vertexCol.size() == 1) {
-			int xMod = 0, zMod = 0;
-			float rawX = (vertexCol.at(0).x + this->offset.x), rawZ = (vertexCol.at(0).z + this->offset.z);
+			//int xMod = 0, zMod = 0;
+			//float rawX = (vertexCol.at(0).x + this->offset.x), rawZ = (vertexCol.at(0).z + this->offset.z);
 
-			int iX = rawX / 10;
-			int iZ = rawZ / 10;
+			//int iX = rawX / 10.0f;
+			//int iZ = rawZ / 10.0f;
 
-			if (rawX > iX * 10 + TILESIZE) xMod = 1;
-			
-			if (rawZ > iZ * 10 + TILESIZE) zMod = 1;
+			//if (!rawX <= iX * 10.0f + TILESIZE) xMod = 1;
+			//
+			//if (!rawZ <= iZ * 10.0f + TILESIZE) zMod = 1;
 
-			if (rawX < iX * 10 - TILESIZE) xMod = -1;
-
-			if (rawZ < iZ * 10 - TILESIZE) zMod = -1;
+			//if (rawX >= iX)
 
 
-			tileX = iX + xMod;
-			tileZ = iZ + zMod;
+			tileX = round(vertexCol.at(0).x + this->offset.x) / 10.0f;
+			tileZ = round(vertexCol.at(0).z + this->offset.z) / 10.0f;
 		}
 		else {
 			std::cerr << "SHIBA attempted to update tile coordinate of a non-custom object." << std::endl;

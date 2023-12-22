@@ -1,5 +1,8 @@
 #pragma once
 
+#define TITLE "SHIBA Engine v1.1 by TJ | Copyright 2023"
+// Stupidly Horrendous Implementation of Basic Animations
+
 #include "Config.h"
 #include "DataStructures.h"
 
@@ -150,8 +153,20 @@ static void initGLFlags() {
 
 static void updateHUD() {
 
-	toggleOverlayMode(true);
-	toggleTransparency(true);
+	// So lights don't affect text
+	glDisable(GL_LIGHTING);
+	// Blending for transparency
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	gluOrtho2D(0, glutGet(GLUT_WINDOW_WIDTH), 0, glutGet(GLUT_WINDOW_HEIGHT));
+
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
 
 	std::string text = "Press E to interact";
 	int x = glutGet(GLUT_WINDOW_WIDTH) / 2 - (text.length() / 2) * 6 - 30, y = glutGet(GLUT_WINDOW_HEIGHT) / 2 - 200;
@@ -194,16 +209,17 @@ static void updateHUD() {
 	glRasterPos2f(25.0f, glutGet(GLUT_WINDOW_HEIGHT) - 50);
 	glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, reinterpret_cast <const unsigned char*> (hp.c_str()));
 
-	// crosshair let it be a small cube for now.
+	// Disable blending after rendering
+	glDisable(GL_BLEND);
 
-	glPushMatrix();
-		glColor3f(1, 1, 1);
-		glTranslatef(glutGet(GLUT_WINDOW_WIDTH)/2, glutGet(GLUT_WINDOW_HEIGHT)/2, 1);
-		glutWireCube(2);
+	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
-	
-	toggleOverlayMode(false);
-	toggleTransparency(false);
+
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+
+	// Re-enabling.
+	glEnable(GL_LIGHTING);
 
 }
 
@@ -1374,6 +1390,12 @@ void bulletModel(ShibaObject a) {
 
 	// moving the render point to elsewhere
 	glPushMatrix();
+	glRotatef(
+		a.offset.yaw,
+		center.x + a.offset.x,
+		center.y + a.offset.y,
+		center.z + a.offset.z
+	);
 	glColor3f(1, 0, 0);	//bullets are red for now
 	glTranslatef(
 		center.x + a.offset.x,
@@ -1408,15 +1430,15 @@ void bulletPhysics() {
 		//float newY = tan((cameraPosition.pitch) * TO_RADIANS) * TRAVEL;
 
 		Position target, difference;
-		target.x = (cos((item.second.offset.yaw + 90.0f) * TO_RADIANS)) * ANIMATIONSTEP;
-		target.z = -(sin((item.second.offset.yaw + 90.0f) * TO_RADIANS)) * ANIMATIONSTEP;
-		target.y = tan((item.second.offset.pitch) * TO_RADIANS) * ANIMATIONSTEP;
+		target.x = cos((item.second.offset.yaw + 90) * TO_RADIANS) * TRAVEL;
+		target.z = -(sin((item.second.offset.yaw + 90) * TO_RADIANS) * TRAVEL);
+		target.y = tan((item.second.offset.pitch) * TO_RADIANS) * TRAVEL;
 
-		//difference = target - current.toPosition();
+		difference = target - current.toPosition();
 
 
 		// For now making bullets slow.
-		item.second.offset += target;
+		item.second.offset += (difference / (ANIMATIONSTEP * 10.0f));
 
 		// Updating coords to new position
 		item.second.updateTileCoords();
@@ -1461,6 +1483,45 @@ void bulletPhysics() {
 
 	tempMap.clear();
 
+	return;
+
+	//// exit if there's nothing to iterate
+	//if (bulletAnimation.empty()) return;
+
+	//std::vector <int> IDsToRemove;
+
+	//for (const auto& item : bulletAnimation) {
+
+	//	Position difference = item.second;
+	//	std::string bulletID = std::to_string(item.first);
+	//	bulletCollection.at(bulletID).offset;
+
+	//	difference -= bulletCollection.at(bulletID).offset;
+
+	//	bulletCollection.at(bulletID).offset += difference / (ANIMATIONSTEP * 5);
+
+	//	if (difference.absolute() <= 0.01) {
+
+	//		bulletCollection.at(bulletID).offset = item.second;
+	//		IDsToRemove.push_back(item.first);	// dequeue this object
+
+	//		// removing the bullet from the collection if the names match
+	//		bulletCollection.erase(bulletID);
+	//		std::cout << "Bullet: " << item.first << " dequeued from animation." << std::endl;
+	//		std::cout << "Bullets in Collection: " << bulletCollection.size() << std::endl;
+	//	}
+
+	//}
+
+	//// recursively removing all ids if animation is complete.
+	//for (int i : IDsToRemove) {
+	//	bulletAnimation.erase(i);
+	//}
+
+	//// trimming and freeing memory
+	//IDsToRemove.clear();
+	//IDsToRemove.shrink_to_fit();
+
 }
 
 void shoot() {
@@ -1483,6 +1544,26 @@ void shoot() {
 
 	// adding to collection to later iterate through using ID
 	bulletMap.insert_or_assign(bullet.objectName, bullet);
+	
+
+	//! WARNING
+	//The code below is the last known formula to calculate bullet trajectory.
+
+	// queuing for animation.
+	// target is not the destination coordinates!
+	// this is how many points it should move in either direction.
+	//Position target;
+
+	// for now shooting in straight lines.
+	// when firing, the bullet will continue to travel until it hits the level bound.
+
+	//float newX = cos((cameraPosition.yaw + 90) * TO_RADIANS) * TRAVEL;
+	//float newZ = sin((cameraPosition.yaw + 90) * TO_RADIANS) * TRAVEL;
+	//float newY = tan((cameraPosition.pitch) * TO_RADIANS) * TRAVEL;
+
+	//target.x = newX;
+	//target.z = -newZ;
+	//target.y = newY;
 
 
 }

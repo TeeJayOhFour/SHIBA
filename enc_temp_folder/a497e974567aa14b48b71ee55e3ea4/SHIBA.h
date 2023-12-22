@@ -1,5 +1,8 @@
 #pragma once
 
+#define TITLE "SHIBA Engine v1.1 by TJ | Copyright 2023"
+// Stupidly Horrendous Implementation of Basic Animations
+
 #include "Config.h"
 #include "DataStructures.h"
 
@@ -1408,9 +1411,9 @@ void bulletPhysics() {
 		//float newY = tan((cameraPosition.pitch) * TO_RADIANS) * TRAVEL;
 
 		Position target, difference;
-		target.x = (cos((item.second.offset.yaw + 90.0f) * TO_RADIANS)) * ANIMATIONSTEP;
-		target.z = -(sin((item.second.offset.yaw + 90.0f) * TO_RADIANS)) * ANIMATIONSTEP;
-		target.y = tan((item.second.offset.pitch) * TO_RADIANS) * ANIMATIONSTEP;
+		target.x = (cos((item.second.offset.yaw + 90.0f) * TO_RADIANS));
+		target.z = -(sin((item.second.offset.yaw + 90.0f) * TO_RADIANS));
+		target.y = tan((item.second.offset.pitch) * TO_RADIANS);
 
 		//difference = target - current.toPosition();
 
@@ -1461,6 +1464,45 @@ void bulletPhysics() {
 
 	tempMap.clear();
 
+	return;
+
+	//// exit if there's nothing to iterate
+	//if (bulletAnimation.empty()) return;
+
+	//std::vector <int> IDsToRemove;
+
+	//for (const auto& item : bulletAnimation) {
+
+	//	Position difference = item.second;
+	//	std::string bulletID = std::to_string(item.first);
+	//	bulletCollection.at(bulletID).offset;
+
+	//	difference -= bulletCollection.at(bulletID).offset;
+
+	//	bulletCollection.at(bulletID).offset += difference / (ANIMATIONSTEP * 5);
+
+	//	if (difference.absolute() <= 0.01) {
+
+	//		bulletCollection.at(bulletID).offset = item.second;
+	//		IDsToRemove.push_back(item.first);	// dequeue this object
+
+	//		// removing the bullet from the collection if the names match
+	//		bulletCollection.erase(bulletID);
+	//		std::cout << "Bullet: " << item.first << " dequeued from animation." << std::endl;
+	//		std::cout << "Bullets in Collection: " << bulletCollection.size() << std::endl;
+	//	}
+
+	//}
+
+	//// recursively removing all ids if animation is complete.
+	//for (int i : IDsToRemove) {
+	//	bulletAnimation.erase(i);
+	//}
+
+	//// trimming and freeing memory
+	//IDsToRemove.clear();
+	//IDsToRemove.shrink_to_fit();
+
 }
 
 void shoot() {
@@ -1483,6 +1525,26 @@ void shoot() {
 
 	// adding to collection to later iterate through using ID
 	bulletMap.insert_or_assign(bullet.objectName, bullet);
+	
+
+	//! WARNING
+	//The code below is the last known formula to calculate bullet trajectory.
+
+	// queuing for animation.
+	// target is not the destination coordinates!
+	// this is how many points it should move in either direction.
+	//Position target;
+
+	// for now shooting in straight lines.
+	// when firing, the bullet will continue to travel until it hits the level bound.
+
+	//float newX = cos((cameraPosition.yaw + 90) * TO_RADIANS) * TRAVEL;
+	//float newZ = sin((cameraPosition.yaw + 90) * TO_RADIANS) * TRAVEL;
+	//float newY = tan((cameraPosition.pitch) * TO_RADIANS) * TRAVEL;
+
+	//target.x = newX;
+	//target.z = -newZ;
+	//target.y = newY;
 
 
 }

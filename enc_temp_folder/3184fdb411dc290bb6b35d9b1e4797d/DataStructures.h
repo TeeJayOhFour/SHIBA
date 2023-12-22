@@ -359,16 +359,16 @@ public:
 			int xMod = 0, zMod = 0;
 			float rawX = (vertexCol.at(0).x + this->offset.x), rawZ = (vertexCol.at(0).z + this->offset.z);
 
-			int iX = rawX / 10;
-			int iZ = rawZ / 10;
+			int iX = rawX / 10.0f;
+			int iZ = rawZ / 10.0f;
 
-			if (rawX > iX * 10 + TILESIZE) xMod = 1;
+			if (!rawX <= iX * 10.0f + TILESIZE) xMod = 1;
 			
-			if (rawZ > iZ * 10 + TILESIZE) zMod = 1;
+			if (!rawZ <= iZ * 10.0f + TILESIZE) zMod = 1;
 
-			if (rawX < iX * 10 - TILESIZE) xMod = -1;
+			if (!rawX >= iX * 10.0f - TILESIZE) xMod = -1;
 
-			if (rawZ < iZ * 10 - TILESIZE) zMod = -1;
+			if (!rawZ <= iZ * 10.0f - TILESIZE) zMod = -1;
 
 
 			tileX = iX + xMod;

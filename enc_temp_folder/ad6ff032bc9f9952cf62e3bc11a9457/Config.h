@@ -12,7 +12,7 @@
 #include <GL/freeglut.h>
 #include <iostream>
 
-#define TITLE "SHIBA Engine v1.4 by TJ | Copyright 2023"
+#define TITLE "SHIBA Engine v1.2 by TJ | Copyright 2023"
 // Stupidly Horrendous Implementation of Basic Animations
 
 #define SENSITIVITY_HIGH 80.0f	
