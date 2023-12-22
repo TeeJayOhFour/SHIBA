@@ -1448,17 +1448,15 @@ void bulletPhysics() {
 		bulletMap.erase(item.first);
 		bulletMap.insert_or_assign(item.second.objectName, item.second);
 
-		int finalX = (array_size(*levelQueue.front().levelGrid) - 1) - item.second.tileX;
-
 
 		// Check if bullet collides with any walls or obstacles here
-		if (levelQueue.front().levelGrid[finalX][item.second.tileZ] == Wall) {
+		if (levelQueue.front().levelGrid[item.second.tileX][item.second.tileZ] == Wall) {
 			bulletMap.erase(item.second.objectName);
 			std::cout << "Bullet killed by wall in tile (X:Z):  " << item.second.tileX << " : " << item.second.tileZ << std::endl;
 			continue;	// No need to check for level bound collisions afterwards
 		}
 
-		if (levelQueue.front().levelGrid[finalX][item.second.tileZ] == DoorClosed) {
+		if (levelQueue.front().levelGrid[item.second.tileX][item.second.tileZ] == DoorClosed) {
 
 			int size = array_size(*levelQueue.front().levelGrid);
 			int id = ((item.second.tileZ * size) + (item.second.tileX));
@@ -1472,8 +1470,8 @@ void bulletPhysics() {
 		}
 
 		//bullets will be deleted once they hit the map edge.
-		if (current.toPosition().x + item.second.offset.x < 0.0f - TILESIZE || current.toPosition().x + item.second.offset.x > levelBounds.x
-			|| current.toPosition().z + item.second.offset.z < 0.0f - TILESIZE || current.toPosition().x + item.second.offset.z > levelBounds.z) {
+		if (current.toPosition().x + item.second.offset.x < 0 || current.toPosition().x + item.second.offset.x > levelBounds.x
+			|| current.toPosition().z + item.second.offset.z < 0 || current.toPosition().x + item.second.offset.z > levelBounds.z) {
 			
 			bulletMap.erase(item.second.objectName);
 			std::cout << "Bullet killed in tile (X:Z):  " << item.second.tileX << " : " << item.second.tileZ << std::endl;

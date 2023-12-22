@@ -36,7 +36,8 @@ struct Position {
 
 	bool operator == (const Position& a) {
 		if (x == a.x && y == a.y &&
-			z == a.z) return true;
+			z == a.z && yaw == a.yaw &&
+			pitch == a.pitch) return true;
 		else return false;
 	}
 
@@ -45,6 +46,8 @@ struct Position {
 		this->x -= a.x;
 		this->y -= a.y;
 		this->z -= a.z;
+		this->yaw -= a.yaw;
+		this->pitch -= a.pitch;
 		return *this;
 	}	
 
@@ -53,6 +56,8 @@ struct Position {
 		x += a.x;
 		y += a.y;
 		z += a.z;
+		yaw += a.yaw;
+		pitch += a.pitch;
 		return *this;
 	}
 
@@ -60,7 +65,9 @@ struct Position {
 
 		if (x <= a &&
 			y <= a &&
-			z <= a) return true;
+			z <= a &&
+			yaw <= a &&
+			pitch <= a) return true;
 		return false;
 	}
 
@@ -69,6 +76,8 @@ struct Position {
 		this->x /= a;
 		this->y /= a;
 		this->z /= a;
+		this->yaw /= a;
+		this->pitch /= a;
 
 		return *this;
 	}
@@ -78,6 +87,8 @@ struct Position {
 		x -= a;
 		y -= a;
 		z -= a;
+		yaw -= a;
+		pitch -= a;
 
 		return *this;
 	}
@@ -87,6 +98,8 @@ struct Position {
 		x -= a.x;
 		y -= a.y;
 		z -= a.z;
+		yaw -= a.yaw;
+		pitch -= a.pitch;
 
 		return *this;
 	}	
@@ -96,6 +109,8 @@ struct Position {
 		x += a.x;
 		y += a.y;
 		z += a.z;
+		yaw += a.yaw;
+		pitch += a.pitch;
 
 		return *this;
 	}
@@ -105,6 +120,8 @@ struct Position {
 		x += a;
 		y += a;
 		z += a;
+		yaw += a;
+		pitch += a;
 
 		return *this;
 	}
@@ -114,6 +131,8 @@ struct Position {
 		x = fabs(x);
 		y = fabs(y);
 		z = fabs(z);
+		yaw = fabs(yaw);
+		pitch = fabs(pitch);
 
 		return *this;
 
@@ -356,8 +375,8 @@ public:
 		//checking if it's a custom object.
 
 		if (vertexCol.size() == 1) {
-			tileX = (vertexCol.at(0).x + this->offset.x) / 10;
-			tileZ = (vertexCol.at(0).z + this->offset.z) / 10;
+			tileX = vertexCol.at(0).x + this->offset.x / 10;
+			tileZ = vertexCol.at(0).z + this->offset.z / 10;
 		}
 		else {
 			std::cerr << "SHIBA attempted to update tile coordinate of a non-custom object." << std::endl;

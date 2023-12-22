@@ -1263,6 +1263,7 @@ void interactWithObj(int objectID) {
 	std::cout << objectCollection.at(objectID).tileX << " ";
 	std::cout << objectCollection.at(objectID).tileZ << std::endl;
 
+
 	queueAnimation(objectID, ((size - 1) - objectCollection.at(objectID).tileX), objectCollection.at(objectID).tileZ);
 
 }
@@ -1391,7 +1392,7 @@ void bulletModel(ShibaObject a) {
 	// moving the render point to elsewhere
 	glPushMatrix();
 	glRotatef(
-		a.offset.yaw,
+		a.offset.yaw + 90,
 		center.x + a.offset.x,
 		center.y + a.offset.y,
 		center.z + a.offset.z
@@ -1425,20 +1426,8 @@ void bulletPhysics() {
 			item.second.vertexCol.at(0).z
 		};
 
-		//float newX = cos((cameraPosition.yaw + 90) * TO_RADIANS) * TRAVEL;
-		//float newZ = sin((cameraPosition.yaw + 90) * TO_RADIANS) * TRAVEL;
-		//float newY = tan((cameraPosition.pitch) * TO_RADIANS) * TRAVEL;
-
-		Position target, difference;
-		target.x = cos((item.second.offset.yaw) * TO_RADIANS) * TRAVEL;
-		target.z = -(sin((item.second.offset.yaw) * TO_RADIANS) * TRAVEL);
-		target.y = tan((item.second.offset.pitch) * TO_RADIANS) * TRAVEL;
-
-		difference = target - current.toPosition();
-
-
 		// For now making bullets slow.
-		item.second.offset += (difference / (ANIMATIONSTEP * 10.0f));
+		item.second.offset += (ANIMATIONSTEP * 10);
 
 		// Updating coords to new position
 		item.second.updateTileCoords();
@@ -1448,23 +1437,20 @@ void bulletPhysics() {
 		bulletMap.erase(item.first);
 		bulletMap.insert_or_assign(item.second.objectName, item.second);
 
-		int finalX = (array_size(*levelQueue.front().levelGrid) - 1) - item.second.tileX;
-
 
 		// Check if bullet collides with any walls or obstacles here
-		if (levelQueue.front().levelGrid[finalX][item.second.tileZ] == Wall) {
+		if (levelQueue.front().levelGrid[item.second.tileX][item.second.tileZ] == Wall) {
 			bulletMap.erase(item.second.objectName);
 			std::cout << "Bullet killed by wall in tile (X:Z):  " << item.second.tileX << " : " << item.second.tileZ << std::endl;
 			continue;	// No need to check for level bound collisions afterwards
 		}
 
-		if (levelQueue.front().levelGrid[finalX][item.second.tileZ] == DoorClosed) {
+		if (levelQueue.front().levelGrid[item.second.tileX][item.second.tileZ] == DoorClosed) {
 
 			int size = array_size(*levelQueue.front().levelGrid);
 			int id = ((item.second.tileZ * size) + (item.second.tileX));
 
-			if (id < 0 || id >= (size * size)) 
-				id = -1;
+			if (id < 0 || id >= (size * size)) id = -1;
 
 			std::cout << "Bullet hit door:  " << item.second.tileX << " : " << item.second.tileZ << std::endl;
 
@@ -1472,8 +1458,8 @@ void bulletPhysics() {
 		}
 
 		//bullets will be deleted once they hit the map edge.
-		if (current.toPosition().x + item.second.offset.x < 0.0f - TILESIZE || current.toPosition().x + item.second.offset.x > levelBounds.x
-			|| current.toPosition().z + item.second.offset.z < 0.0f - TILESIZE || current.toPosition().x + item.second.offset.z > levelBounds.z) {
+		if (current.toPosition().x + item.second.offset.x < 0 || current.toPosition().x + item.second.offset.x > levelBounds.x
+			|| current.toPosition().z + item.second.offset.z < 0 || current.toPosition().x + item.second.offset.z > levelBounds.z) {
 			
 			bulletMap.erase(item.second.objectName);
 			std::cout << "Bullet killed in tile (X:Z):  " << item.second.tileX << " : " << item.second.tileZ << std::endl;
@@ -1539,32 +1525,11 @@ void shoot() {
 	// bind the bullet model to the object.
 	bullet.setLoadGlutFunction(bulletModel);
 
-	bullet.offset.yaw = (cameraPosition.yaw + 90);
-	bullet.offset.pitch = cameraPosition.pitch;
+	bullet.offset.yaw = (cameraPosition.yaw + 90) * TO_RADIANS;
+	bullet.offset.pitch = cameraPosition.pitch * TO_RADIANS;
 
 	// adding to collection to later iterate through using ID
 	bulletMap.insert_or_assign(bullet.objectName, bullet);
-	
-
-	//! WARNING
-	//The code below is the last known formula to calculate bullet trajectory.
-
-	// queuing for animation.
-	// target is not the destination coordinates!
-	// this is how many points it should move in either direction.
-	//Position target;
-
-	// for now shooting in straight lines.
-	// when firing, the bullet will continue to travel until it hits the level bound.
-
-	//float newX = cos((cameraPosition.yaw + 90) * TO_RADIANS) * TRAVEL;
-	//float newZ = sin((cameraPosition.yaw + 90) * TO_RADIANS) * TRAVEL;
-	//float newY = tan((cameraPosition.pitch) * TO_RADIANS) * TRAVEL;
-
-	//target.x = newX;
-	//target.z = -newZ;
-	//target.y = newY;
-
 
 }
 

@@ -1472,8 +1472,8 @@ void bulletPhysics() {
 		}
 
 		//bullets will be deleted once they hit the map edge.
-		if (current.toPosition().x + item.second.offset.x < 0.0f - TILESIZE || current.toPosition().x + item.second.offset.x > levelBounds.x
-			|| current.toPosition().z + item.second.offset.z < 0.0f - TILESIZE || current.toPosition().x + item.second.offset.z > levelBounds.z) {
+		if (current.toPosition().x + item.second.offset.x < 0 || current.toPosition().x + item.second.offset.x > levelBounds.x
+			|| current.toPosition().z + item.second.offset.z < 0 || current.toPosition().x + item.second.offset.z > levelBounds.z) {
 			
 			bulletMap.erase(item.second.objectName);
 			std::cout << "Bullet killed in tile (X:Z):  " << item.second.tileX << " : " << item.second.tileZ << std::endl;
