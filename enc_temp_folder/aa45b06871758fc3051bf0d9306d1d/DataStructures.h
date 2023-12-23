@@ -456,18 +456,34 @@ public:
 	void render(int x, int y, int padding, int textHeight, Position* cursor) {
 
 		// checking if mouse is within menu text area.
+		if (type != SLIDER_BUTTON) {
 
-		if (cursor->x > x - padding && cursor->x < x + (this->text.length() * 13)
-			&& cursor->y > y - padding && cursor->y < y + textHeight) {
 
-			glColor3f(0, 1, 0);
-			hovering = true;
-		}
+			if (cursor->x > x - padding && cursor->x < x + (this->text.length() * 13)
+				&& cursor->y > y - padding && cursor->y < y + textHeight) {
+
+				glColor3f(0, 1, 0);
+				hovering = true;
+			}
+			else {
+				hovering = false;
+				glColor3f(1, 0, 0);
+			}
+		} 
 		else {
-			hovering = false;
-			glColor3f(1, 0, 0);
+			if (cursor->x > x + (text.length() * 13) + gap && cursor->x < x + (text.length() * 13) + gap + 15
+				&& cursor->y > y && cursor->y < y + 15) {
+
+				glColor3f(0, 1, 0);
+				hovering = true;
+			}
+			else {
+				hovering = false;
+				glColor3f(1, 0, 0);
+			}
+
 		}
-		
+
 		glBegin(GL_QUADS);
 		glNormal3f(0, 0, 0);
 		int spacing = 0;
@@ -480,6 +496,21 @@ public:
 			glVertex2f(x + (text.length() * 13), y - padding);
 			glVertex2f(x + (text.length() * 13), y + textHeight);
 			glVertex2f(x - padding, y + textHeight);
+			
+			for (int item : value) {
+
+				//checking current value
+				if (item == value.at(this->head)) glColor3f(0, 1, 0);
+				else glColor3f(1, 0, 0);
+
+				//toggle box
+				glVertex2f(x + (text.length() * 13) + gap + spacing, y);
+				glVertex2f(x + (text.length() * 13) + gap + spacing + 15, y);
+				glVertex2f(x + (text.length() * 13) + gap + spacing + 15, y + 15);
+				glVertex2f(x + (text.length() * 13) + gap + spacing, y + 15);
+				
+				spacing += 30;
+			}
 
 		break;
 
@@ -515,6 +546,19 @@ public:
 
 
 		break;
+
+
+		case SLIDER_BUTTON:
+
+			// the main cursor you interact with.
+			glVertex2f(x + (text.length() * 13) + gap, y);
+			glVertex2f(x + (text.length() * 13) + gap + 15, y);
+			glVertex2f(x + (text.length() * 13) + gap + 15, y + 15);
+			glVertex2f(x + (text.length() * 13) + gap, y + 15);
+
+
+		break;
+
 
 		}
 		
@@ -555,64 +599,59 @@ public:
 		toggleOverlayMode(true);
 
 		if (displayed) {
-
 			int tempY = y;
 
 			for (MenuOption &item : options) {
 
 				glNormal3f(2, 0, 0);
 				glColor3f(1, 1, 1);
-				glRasterPos2f(x, tempY);
+				glRasterPos2f(x, y);
 
 				//Show text
 				std::string finalText = item.text;
 
-				if (item.type == MULTI_BUTTON && item.value.size() != 0) {
-					finalText += "                      [" + std::to_string(item.value.at(item.head)) + " %]";
+				if (item.type == TOGGLE_BUTTON) {
+					finalText += " " + item.value.at(0);
 				}
 
-				const unsigned char* convertedStr = reinterpret_cast <const unsigned char*> (finalText.c_str());
+				const unsigned char* convertedStr = reinterpret_cast <const unsigned char*> (item.text.c_str());
 				glutBitmapString(GLUT_BITMAP_HELVETICA_18, convertedStr);
 
 				// Render the button itself.
 				if (item.hovering) {
 
 					// handle click
-					//if (cursor->buttonState == 0 && cursor->button == 0) {
+					if (cursor->buttonState == 0 && cursor->button == 0) {
+						std::cout << "Clicked on: " << item.text << std::endl;
 
-						if (item.type == BUTTON && cursor->buttonState == 0 && cursor->button == 0) {
+						if (item.type == BUTTON)
 							handlerFunction(item.text, -1);
-						}
-						else if (item.type == TOGGLE_BUTTON && cursor->buttonState == 0 && cursor->button == 0) {
+						else if (item.type == TOGGLE_BUTTON) {
 							item.value.front() = item.value.front() == 0 ? 1 : 0;
 							handlerFunction(item.text, item.value.front());
 						}
-						else if (item.type == MULTI_BUTTON && cursor->buttonState == 0) {
+						else if (item.type == MULTI_BUTTON) {
 
-							if (cursor->button == 0) {
-								if (item.head + 1 != item.value.size()) item.head++;
-								else item.head = 0;
-							}
-							else if (cursor->button == 2) {
-								if (!item.head - 1 <= -1) item.head--;
-								else item.head = item.value.size() - 1;
-							}
+							if (item.head + 1 != item.value.size()) item.head++;
+							else item.head = 0;
 
 							handlerFunction(item.text, item.value.at(item.head));
+
 						}
 
-						//std::cout << "Clicked on: " << item.text << std::endl;
 						cursor->button = -1;
 						cursor->buttonState = -1;
-					//}
+					}
 
 				}
 
-				item.render(x, tempY, padding, textHeight, cursor);
+				item.render(x, y, padding, textHeight, cursor);
 
-				tempY += 30.0f;
+				y += 30.0f;
 			}
 
+			// Restoring y
+			y = tempY;
 		}
 
 		toggleOverlayMode(false);

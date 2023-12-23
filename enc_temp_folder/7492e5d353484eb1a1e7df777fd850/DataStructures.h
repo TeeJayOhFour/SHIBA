@@ -555,19 +555,18 @@ public:
 		toggleOverlayMode(true);
 
 		if (displayed) {
-
 			int tempY = y;
 
 			for (MenuOption &item : options) {
 
 				glNormal3f(2, 0, 0);
 				glColor3f(1, 1, 1);
-				glRasterPos2f(x, tempY);
+				glRasterPos2f(x, y);
 
 				//Show text
 				std::string finalText = item.text;
 
-				if (item.type == MULTI_BUTTON && item.value.size() != 0) {
+				if (item.type == MULTI_BUTTON) {
 					finalText += "                      [" + std::to_string(item.value.at(item.head)) + " %]";
 				}
 
@@ -580,9 +579,8 @@ public:
 					// handle click
 					//if (cursor->buttonState == 0 && cursor->button == 0) {
 
-						if (item.type == BUTTON && cursor->buttonState == 0 && cursor->button == 0) {
+						if (item.type == BUTTON && cursor->buttonState == 0 && cursor->button == 0)
 							handlerFunction(item.text, -1);
-						}
 						else if (item.type == TOGGLE_BUTTON && cursor->buttonState == 0 && cursor->button == 0) {
 							item.value.front() = item.value.front() == 0 ? 1 : 0;
 							handlerFunction(item.text, item.value.front());
@@ -594,11 +592,12 @@ public:
 								else item.head = 0;
 							}
 							else if (cursor->button == 2) {
-								if (!item.head - 1 <= -1) item.head--;
+								if (item.head - 1 != -1) item.head--;
 								else item.head = item.value.size() - 1;
 							}
 
 							handlerFunction(item.text, item.value.at(item.head));
+
 						}
 
 						//std::cout << "Clicked on: " << item.text << std::endl;
@@ -608,11 +607,13 @@ public:
 
 				}
 
-				item.render(x, tempY, padding, textHeight, cursor);
+				item.render(x, y, padding, textHeight, cursor);
 
-				tempY += 30.0f;
+				y += 30.0f;
 			}
 
+			// Restoring y
+			y = tempY;
 		}
 
 		toggleOverlayMode(false);

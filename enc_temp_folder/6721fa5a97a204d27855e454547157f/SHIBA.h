@@ -68,7 +68,7 @@ void renderText(float x, float y, int r, int g, int b, const char* string);
 
 #include "TextureLoader.h"
 
-// init all possible menus in the game screen
+
 void initMenu() {
 
 	std::vector<MenuOption> menuOptions;
@@ -85,16 +85,7 @@ void initMenu() {
 	menuOptions.clear();
 
 	menuOptions.push_back({ "BACK", BUTTON });
-	menuOptions.push_back({ "MASTER SOUND VOLUME", MULTI_BUTTON, 0 });
-
-	// recursively adding all the options possible from 0-100 lol
-	// There could have been an easier way to achieve this howwever ther wasn't enough time to fledge out the menu system.
-
-	for (int i = 0; i < 9; i++) {
-		menuOptions.back().value.push_back((i + 1) * 10);
-	}
-	menuOptions.back().head = 5;
-	
+	menuOptions.push_back({ "MASTER SOUND VOLUME", MULTI_BUTTON, 100 });	//100 by default
 	menuOptions.push_back({ "MOUSE SENSITIVITY", MULTI_BUTTON, (int) mouseSpeed });
 	menuOptions.back().value.push_back((int) SENSITIVITY_HIGH);
 	menuOptions.back().value.push_back((int) SENSITIVITY_LOW);
@@ -317,8 +308,22 @@ static int launch(int argc, char** argv) {
 	cameraPosition.yaw = 270.0; //facing negative X
 
 	// Sound Engine config.
-	//soundEngine->setSoundVolume(MAX_VOLUME);
-	//soundEngine->play2D(BATTLE_MUSIC_1, true);
+	//soundEngine->play2D()
+
+	// Convert the current time to a time_point representing the system clock
+	auto systemClockTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+
+	// Use std::put_time and std::localtime to format the date and time
+	std::tm timeInfo = {};
+	localtime_s(&timeInfo, &systemClockTime);
+
+	// Use std::strftime to format the date and time
+	char buffer[80]; // A buffer to store the formatted date and time
+	std::strftime(buffer, sizeof(buffer), "%d/%m/%Y %H:%M:%S", &timeInfo);
+
+	// Output the formatted date and time
+	std::cout << "Current Date and Time: " << buffer << std::endl;
+
 
 
 	if (possibleSpawns.size() == 0)
@@ -433,14 +438,9 @@ void handleOptionInteraction(std::string option, int value = -1) {
 
 	//TODO: Create a separate class system for MENUs
 	if (option == "BACK") {
-		std::cout << "menus before: " << menuQueue.size() << std::endl;
-
 		//Putting the main menu back on queue before going to options.
 		menuQueue.push(menuQueue.front());
 		menuQueue.pop();
-
-		std::cout << "menus after: " << menuQueue.size() << std::endl;
-
 	}
 
 	if (option == "FULLSCREEN") {
@@ -454,13 +454,6 @@ void handleOptionInteraction(std::string option, int value = -1) {
 		std::cout << "Mouse speed set to: " << value << std::endl;
 		mouseSpeed = value;
 
-	}
-
-	if (option == "MASTER SOUND VOLUME") {
-
-		MAX_VOLUME = ((float)value) / 100.0;
-		std::cout << "Volume set to: " << MAX_VOLUME << std::endl;
-		soundEngine->setSoundVolume(MAX_VOLUME);
 	}
 
 	
@@ -484,14 +477,9 @@ void handleMainMenuInteraction(std::string option, int value = -1) {
 
 	if (option == "OPTIONS") {
 
-		std::cout << "menus before: " << menuQueue.size() << std::endl;
-
 		//Putting the main menu back on queue before going to options.
 		menuQueue.push(menuQueue.front());
 		menuQueue.pop();
-
-		std::cout << "menus after: " << menuQueue.size() << std::endl;
-
 
 	}
 
@@ -720,7 +708,7 @@ void listenForNormalKeys(unsigned char key, int xx, int yy) {
 		initLevels(levelQueue);
 		break;
 
-	case (int)'z':
+	case (int)'m':
 		int tpX, tpZ;
 		std::cout << "Enter new tile cords:";
 		std::cin >> tpX >> tpZ;
@@ -728,11 +716,6 @@ void listenForNormalKeys(unsigned char key, int xx, int yy) {
 		cameraPosition.x = tpX * 10;
 		cameraPosition.z = tpZ * 10;
 
-		break;
-
-	case (int)'m':
-		std::cout << "SOUNDS STOPPED" << std::endl;
-		soundEngine->removeAllSoundSources();
 		break;
 
 	case (int)'q':

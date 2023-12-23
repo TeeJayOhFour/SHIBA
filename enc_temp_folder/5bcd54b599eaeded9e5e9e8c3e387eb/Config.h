@@ -18,7 +18,6 @@
 #define TITLE "SHIBA Engine v1.5 by TJ | Copyright 2023"
 // Stupidly Horrendous Implementation of Basic Animations
 
-
 #define array_size(arr) (sizeof(arr) / sizeof(*(arr)))
 constexpr auto SENSITIVITY_HIGH = 80.0f;
 constexpr auto SENSITIVITY_MID = 50.0f;	//Higher is slower.
@@ -37,6 +36,8 @@ constexpr auto WIDTH = 16*80;
 constexpr auto HEIGHT = 9*80;
 
 
+// FILE PATHS
+constexpr auto BATTLE_MUSIC_1 = "assets/sound/battle.mp3";
 
 
 static float mouseSpeed = SENSITIVITY_MID;
@@ -52,15 +53,10 @@ static int movemenSpeed = 2.0; //Higher is slower.
 static int pitchLimit = 60;
 static auto startTime = std::chrono::high_resolution_clock::now();
 static int currentScene = -1;
+
 static float DevHudY = 0.0f;		//WHY IS THIS STILL HERE?! REMOVE IT FFS IT SERVES NO PURPOSE
 
-
-static float MAX_VOLUME = 0.5f; //0.5f or 50% by default
 static irrklang::ISoundEngine* soundEngine = irrklang::createIrrKlangDevice();
-
-// Sound files
-static irrklang::ISoundSource* BATTLE_MUSIC_1 = soundEngine->addSoundSourceFromFile("assets/sound/battle.mp3");
-
 
 // for FPS calculation
 static int initTime = time(NULL), finalTime, frameCount = 0;

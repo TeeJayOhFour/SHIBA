@@ -317,8 +317,8 @@ static int launch(int argc, char** argv) {
 	cameraPosition.yaw = 270.0; //facing negative X
 
 	// Sound Engine config.
-	//soundEngine->setSoundVolume(MAX_VOLUME);
-	//soundEngine->play2D(BATTLE_MUSIC_1, true);
+	 soundEngine->setSoundVolume(MAX_VOLUME);
+	 soundEngine->play2D(BATTLE_MUSIC_1, true);
 
 
 	if (possibleSpawns.size() == 0)
@@ -458,7 +458,7 @@ void handleOptionInteraction(std::string option, int value = -1) {
 
 	if (option == "MASTER SOUND VOLUME") {
 
-		MAX_VOLUME = ((float)value) / 100.0;
+		MAX_VOLUME = ((float)value) / 10.0;
 		std::cout << "Volume set to: " << MAX_VOLUME << std::endl;
 		soundEngine->setSoundVolume(MAX_VOLUME);
 	}

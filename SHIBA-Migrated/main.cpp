@@ -3,7 +3,6 @@
 #include "SHIBA.h"
 using namespace std;
 
-
 int main(int argc, char** argv) {
 
     int L3Map[20][20] = {
