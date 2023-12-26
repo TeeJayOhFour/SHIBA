@@ -7,12 +7,12 @@ using namespace std;
 
 static void drawHuman(ShibaObject a) {
 
-    // any custom object must have a single ShibaQuad point as center.
+    gluLookAt(0.0, 0.0, 3.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 
     ShibaQuad center;
     center = a.vertexCol.front();
 
-    //// Draw the head
+    // Draw the head
     glColor3f(1.0, 0.8, 0.6); // Skin color
 
     glutSolidSphere(0.25, 100, 100);
@@ -21,6 +21,7 @@ static void drawHuman(ShibaObject a) {
     glColor3f(0.5, 0.5, 1.0); // Blue shirt
 
     glPushMatrix();
+    //glTranslatef(0.0, -0.4, 0.0);
         glTranslatef(
             center.x + a.offset.x,
             center.y + a.offset.y - 0.4f,

@@ -169,7 +169,8 @@
   <ItemGroup>
     <ClCompile Include="DataStructures.h" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Source.cpp" />
+    <ClCompile Include="nn.cpp" />
+    <ClCompile Include="zaki.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Config.h" />

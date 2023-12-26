@@ -305,7 +305,7 @@ public:
 	void load() {
 		// texture code goes here
 
-		if (glutSolids != nullptr) {
+		if (vertexCol.size() == 1) {
 			std::cout << "loaded" << std::endl;
 			loadGlutSolids();
 			return;

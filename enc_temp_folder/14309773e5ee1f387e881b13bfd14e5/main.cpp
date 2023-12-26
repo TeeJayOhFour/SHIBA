@@ -7,60 +7,40 @@ using namespace std;
 
 static void drawHuman(ShibaObject a) {
 
-    // any custom object must have a single ShibaQuad point as center.
+    gluLookAt(0.0, 0.0, 3.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 
-    ShibaQuad center;
-    center = a.vertexCol.front();
-
-    //// Draw the head
+    // Draw the head
     glColor3f(1.0, 0.8, 0.6); // Skin color
-
     glutSolidSphere(0.25, 100, 100);
 
     // Draw the body
     glColor3f(0.5, 0.5, 1.0); // Blue shirt
-
     glPushMatrix();
-        glTranslatef(
-            center.x + a.offset.x,
-            center.y + a.offset.y - 0.4f,
-            center.z + a.offset.z);
+    glTranslatef(0.0, -0.4, 0.0);
     glutSolidCube(0.4);
     glPopMatrix();
 
     // Draw the arms
     glColor3f(1.0, 0.8, 0.6); // Skin color
     glPushMatrix();
-        glTranslatef(
-            center.x + a.offset.x + 0.5f,
-            center.y + a.offset.y - 0.3f,
-            center.z + a.offset.z);
+    glTranslatef(0.5, -0.3, 0.0);
     glutSolidCube(0.1);
     glPopMatrix();
 
     glPushMatrix();
-        glTranslatef(
-            center.x + a.offset.x - 0.5f,
-            center.y + a.offset.y - 0.3f,
-            center.z + a.offset.z);
+    glTranslatef(-0.5, -0.3, 0.0);
     glutSolidCube(0.1);
     glPopMatrix();
 
     // Draw the legs
     glColor3f(0.0, 0.0, 1.0); // Blue pants
     glPushMatrix();
-        glTranslatef(
-            center.x + a.offset.x + 0.2f,
-            center.y + a.offset.y - 0.8f,
-            center.z + a.offset.z);
+    glTranslatef(0.2, -0.8, 0.0);
     glutSolidCube(0.15);
     glPopMatrix();
 
     glPushMatrix();
-        glTranslatef(
-            center.x + a.offset.x - 0.2f,
-            center.y + a.offset.y - 0.8f,
-            center.z + a.offset.z);
+    glTranslatef(-0.2, -0.8, 0.0);
     glutSolidCube(0.15);
     glPopMatrix();
 
@@ -173,12 +153,12 @@ int main(int argc, char** argv) {
     //! TODO Allow shibaobject to handle glutsolids
     ShibaObject zaki(0, 0, 0);
     zaki.setLoadGlutFunction(drawHuman);
-     meow1.customObjects.push_back(zaki);
 
     // batman.setLoadGlutFunction(&kyakya);
     // batman.loadGlutSolids();
 
     // return 0;
+     meow1.customObjects.push_back(zaki);
 
     LevelQueue.push(meow1);
     LevelQueue.push(meow2);

@@ -93,7 +93,7 @@ void initMenu() {
 	for (int i = 0; i < 9; i++) {
 		menuOptions.back().value.push_back((i + 1) * 10);
 	}
-	menuOptions.back().head = (int) MAX_VOLUME * 100;
+	menuOptions.back().head = 5;
 	
 	menuOptions.push_back({ "MOUSE SENSITIVITY", MULTI_BUTTON, (int) mouseSpeed });
 	menuOptions.back().value.push_back((int) SENSITIVITY_HIGH);
@@ -317,8 +317,8 @@ static int launch(int argc, char** argv) {
 	cameraPosition.yaw = 270.0; //facing negative X
 
 	// Sound Engine config.
-	soundEngine->setSoundVolume(MAX_VOLUME);
-	soundEngine->play2D(BATTLE_MUSIC_1, true);
+	//soundEngine->setSoundVolume(MAX_VOLUME);
+	//soundEngine->play2D(BATTLE_MUSIC_1, true);
 
 
 	if (possibleSpawns.size() == 0)
@@ -527,10 +527,8 @@ void draw() {
 
 		}
 
-
-		objectCollection.at(i).load();
-		
 		// Loads the object in the world.
+		objectCollection.at(i).load();
 		glDisable(GL_TEXTURE_2D);
 
 		// loading bullets (if any)
@@ -694,6 +692,7 @@ void renderWorldBox() {
 
 	glDisable(GL_TEXTURE_2D);
 }
+
 
 
 void maintainAspectRatio(int w, int h) {
@@ -964,7 +963,7 @@ void initLevels(std::queue <Level> queue) {
 			y = GROUNDLEVEL;
 
 			// adding to spawn collection if it's a valid spawn loaction.
-			if (levelQueue.front().levelGrid[actualZ][actualX] == SpawnLoc)
+			if (queue.front().levelGrid[actualZ][actualX] == SpawnLoc)
 				addSpawns((size - 1) - actualZ, actualX);
 
 			// Points are below.
@@ -975,108 +974,99 @@ void initLevels(std::queue <Level> queue) {
 			// saving the color (not necessary when loading textures)
 			tile.color = levelQueue.front().levelGrid[actualZ][actualX];
 
-			if (tile.color != Custom || levelQueue.front().customObjects.empty()) {
-				// counting number of objectives
-				if (tile.color == Objective) levelQueue.front().objectives++;
-				// counting enemy spawners
-				if (tile.color == EnemySpawner) {
-					levelQueue.front().enemies++;
-					// adding the ID of the object to a separate vector for
-					// controling spawning.
-					enemySpawnerLocations.push_back(objectCollection.size());
-				}
+			// counting number of objectives
+			if (tile.color == Objective) levelQueue.front().objectives++;
+			// counting enemy spawners
+			if (tile.color == EnemySpawner) {
+				levelQueue.front().enemies++;
+				// adding the ID of the object to a separate vector for
+				// controling spawning.
+				enemySpawnerLocations.push_back(objectCollection.size());
+			}
 
-				if (tile.color == Wall || abs(tile.color) == DoorClosed) tile.texture = true;
-				else tile.texture = false;
+			if (tile.color == Wall || abs(tile.color) == DoorClosed) tile.texture = true;
+			else tile.texture = false;
 
-				// Ground vertexes:
-				// Bottom view
-				// Doors will have some extra vertexes.
-				if (tile.color == DoorClosed || DoorOpen) {
-					// P3 = top left vertex
-					tile.vertexCol.push_back({ x + TILESIZE, y, z - TILESIZE, {0, 1.0f, 0} });
-					// P2 = top right vertex
-					tile.vertexCol.push_back({ x + TILESIZE, y, z + TILESIZE, {0, 1.0f, 0} });
-					// P1 = bottom right vertex
-					tile.vertexCol.push_back({ x - TILESIZE, y, z + TILESIZE, {0, 1.0f, 0} });
-					// P4 = bottom left vertexeee
-					tile.vertexCol.push_back({ x - TILESIZE, y, z - TILESIZE, {0, 1.0f, 0} });
-				}
-
-				// Wall vertexes
-				float wallModifer;
-
-				// Incase it's a note, it will be scaled down to be of only 0.1f height
-				if (tile.color == Notes) wallModifer = 0.1f;
-				// else if (tile.color == Empty) wallModifer = 0.01f;
-				else wallModifer = 20.0f;
-
-				tile.texturePoints.push_back({ 0.0, 0.0 });
-				tile.texturePoints.push_back({ 0.0, (float)repeatScale });
-				tile.texturePoints.push_back({ (float)repeatScale, (float)repeatScale });
-				tile.texturePoints.push_back({ (float)repeatScale, 0.0 });
-
-				// Top view (only visible in god mode)
-				// P1 = bottom right vertex
-				tile.vertexCol.push_back({ x - TILESIZE, y + wallModifer, z + TILESIZE, {0, 1.0f, 0} });
+			// Ground vertexes:
+			// Bottom view
+			// Doors will have some extra vertexes.
+			if (tile.color == DoorClosed || DoorOpen) {
+				// P3 = top left vertex
+				tile.vertexCol.push_back({ x + TILESIZE, y, z - TILESIZE, {0, 1.0f, 0} });
 				// P2 = top right vertex
-				tile.vertexCol.push_back({ x + TILESIZE, y + wallModifer, z + TILESIZE, {0, 1.0f, 0} });
-				// P3 = top left
-				tile.vertexCol.push_back({ x + TILESIZE, y + wallModifer, z - TILESIZE, {0, 1.0f, 0} });
+				tile.vertexCol.push_back({ x + TILESIZE, y, z + TILESIZE, {0, 1.0f, 0} });
+				// P1 = bottom right vertex
+				tile.vertexCol.push_back({ x - TILESIZE, y, z + TILESIZE, {0, 1.0f, 0} });
+				// P4 = bottom left vertexeee
+				tile.vertexCol.push_back({ x - TILESIZE, y, z - TILESIZE, {0, 1.0f, 0} });
+			}
+
+			// Wall vertexes
+			float wallModifer;
+
+			// Incase it's a note, it will be scaled down to be of only 0.1f height
+			if (tile.color == Notes) wallModifer = 0.1f;
+			// else if (tile.color == Empty) wallModifer = 0.01f;
+			else wallModifer = 20.0f;
+
+			tile.texturePoints.push_back({ 0.0, 0.0 });
+			tile.texturePoints.push_back({ 0.0, (float)repeatScale });
+			tile.texturePoints.push_back({ (float)repeatScale, (float)repeatScale });
+			tile.texturePoints.push_back({ (float)repeatScale, 0.0 });
+
+			// Top view (only visible in god mode)
+			// P1 = bottom right vertex
+			tile.vertexCol.push_back({ x - TILESIZE, y + wallModifer, z + TILESIZE, {0, 1.0f, 0} });
+			// P2 = top right vertex
+			tile.vertexCol.push_back({ x + TILESIZE, y + wallModifer, z + TILESIZE, {0, 1.0f, 0} });
+			// P3 = top left
+			tile.vertexCol.push_back({ x + TILESIZE, y + wallModifer, z - TILESIZE, {0, 1.0f, 0} });
+			// P4 = bottom left
+			tile.vertexCol.push_back({ x - TILESIZE, y + wallModifer, z - TILESIZE, {0, 1.0f, 0} });
+
+
+			if (levelQueue.front().levelGrid[actualZ][actualX] > 0) {
+				// -X facing wall Quad
+
+					// P1 = bottom right vertex
+				tile.vertexCol.push_back({ x - TILESIZE, y, z + TILESIZE, {0, -1.0f, 0} });
+				tile.vertexCol.push_back({ x - TILESIZE, y + wallModifer, z + TILESIZE, {0, -1.0f, 0} });
+
 				// P4 = bottom left
-				tile.vertexCol.push_back({ x - TILESIZE, y + wallModifer, z - TILESIZE, {0, 1.0f, 0} });
+				tile.vertexCol.push_back({ x - TILESIZE, y + wallModifer, z - TILESIZE, {0, -1.0f, 0} });
+				tile.vertexCol.push_back({ x - TILESIZE, y, z - TILESIZE, {0, -1.0f, 0} });
 
+				// +X facing wall Quad
+					// P3 = top left
+				tile.vertexCol.push_back({ x + TILESIZE, y, z - TILESIZE, {0, -1.0f, 0} });
+				tile.vertexCol.push_back({ x + TILESIZE, y + wallModifer, z - TILESIZE, {0, -1.0f, 0} });
+				// P2 = top right vertex
+				tile.vertexCol.push_back({ x + TILESIZE, y + wallModifer, z + TILESIZE, {0, -1.0f, 0} });
+				tile.vertexCol.push_back({ x + TILESIZE, y, z + TILESIZE, {0, -1.0f, 0} });
 
-				if (levelQueue.front().levelGrid[actualZ][actualX] > 0) {
-					// -X facing wall Quad
-
-						// P1 = bottom right vertex
-					tile.vertexCol.push_back({ x - TILESIZE, y, z + TILESIZE, {0, -1.0f, 0} });
-					tile.vertexCol.push_back({ x - TILESIZE, y + wallModifer, z + TILESIZE, {0, -1.0f, 0} });
+				// -Z facing wall Quad
 
 					// P4 = bottom left
-					tile.vertexCol.push_back({ x - TILESIZE, y + wallModifer, z - TILESIZE, {0, -1.0f, 0} });
-					tile.vertexCol.push_back({ x - TILESIZE, y, z - TILESIZE, {0, -1.0f, 0} });
+				tile.vertexCol.push_back({ x - TILESIZE, y, z - TILESIZE, {0, -1.0, 0} });
+				tile.vertexCol.push_back({ x - TILESIZE, y + wallModifer, z - TILESIZE, {0, -1.0, 0} });
+				// P3 = top left
+				tile.vertexCol.push_back({ x + TILESIZE, y + wallModifer, z - TILESIZE, {0, -1.0, 0} });
+				tile.vertexCol.push_back({ x + TILESIZE, y, z - TILESIZE, {0, -1.0, 0} });
 
-					// +X facing wall Quad
-						// P3 = top left
-					tile.vertexCol.push_back({ x + TILESIZE, y, z - TILESIZE, {0, -1.0f, 0} });
-					tile.vertexCol.push_back({ x + TILESIZE, y + wallModifer, z - TILESIZE, {0, -1.0f, 0} });
+				// +Z facing wall Quad
+
 					// P2 = top right vertex
-					tile.vertexCol.push_back({ x + TILESIZE, y + wallModifer, z + TILESIZE, {0, -1.0f, 0} });
-					tile.vertexCol.push_back({ x + TILESIZE, y, z + TILESIZE, {0, -1.0f, 0} });
+				tile.vertexCol.push_back({ x + TILESIZE, y, z + TILESIZE, {0, -1.0f, 0,} });
+				tile.vertexCol.push_back({ x + TILESIZE, y + wallModifer, z + TILESIZE, {0, -1.0f, 0} });
+				// P1 = bottom right vertex
+				tile.vertexCol.push_back({ x - TILESIZE, y + wallModifer, z + TILESIZE, {0, -1.0f, 0} });
+				tile.vertexCol.push_back({ x - TILESIZE, y, z + TILESIZE, {0, -1.0f, 0} });
 
-					// -Z facing wall Quad
-
-						// P4 = bottom left
-					tile.vertexCol.push_back({ x - TILESIZE, y, z - TILESIZE, {0, -1.0, 0} });
-					tile.vertexCol.push_back({ x - TILESIZE, y + wallModifer, z - TILESIZE, {0, -1.0, 0} });
-					// P3 = top left
-					tile.vertexCol.push_back({ x + TILESIZE, y + wallModifer, z - TILESIZE, {0, -1.0, 0} });
-					tile.vertexCol.push_back({ x + TILESIZE, y, z - TILESIZE, {0, -1.0, 0} });
-
-					// +Z facing wall Quad
-
-						// P2 = top right vertex
-					tile.vertexCol.push_back({ x + TILESIZE, y, z + TILESIZE, {0, -1.0f, 0,} });
-					tile.vertexCol.push_back({ x + TILESIZE, y + wallModifer, z + TILESIZE, {0, -1.0f, 0} });
-					// P1 = bottom right vertex
-					tile.vertexCol.push_back({ x - TILESIZE, y + wallModifer, z + TILESIZE, {0, -1.0f, 0} });
-					tile.vertexCol.push_back({ x - TILESIZE, y, z + TILESIZE, {0, -1.0f, 0} });
-
-				}
-
-				//! TODO: Assign glut functions outside of engine.
-				// This is for testing only and it works!
-				// tile.setLoadGlutFunction(test);
 			}
-			else {
-				std::cout << "custom object added from init" << std::endl;
 
-				tile.vertexCol.push_back({ x, 0, z, {0, 1.0f, 0} });
-				tile.setLoadGlutFunction(levelQueue.front().customObjects.at(0).glutSolids);
-				
-			}
+			//! TODO: Assign glut functions outside of engine.
+			// This is for testing only and it works!
+			// tile.setLoadGlutFunction(test);
 
 			// finally add the object to the level collection.
 			objectCollection.push_back(tile);
@@ -1111,6 +1101,10 @@ void renderGameElements() {
 
 	// Player HUD elements
 	updateHUD();
+
+	// Pathing algorithms for enemies.
+	//TODO finish this
+	//spawnEnemies();		 
 	
 
 }
@@ -1416,6 +1410,7 @@ void bulletModel(ShibaObject a) {
 
 	// any custom object must have a single ShibaQuad point as center.
 	ShibaQuad center;
+
 	center = a.vertexCol.at(0);
 
 	// moving the render point to elsewhere
@@ -1428,6 +1423,8 @@ void bulletModel(ShibaObject a) {
 	glutSolidCube(1.0f);
 	glPopMatrix();
 	
+	//putting it back to scene origin
+
 }
 
 // handles bullet animation and collision
@@ -1507,14 +1504,18 @@ void bulletPhysics() {
 }
 
 void shoot() {
+	float xMod = 1, zMod = 1;
+	//!TODO Need to update make name dynamic which updates after each movement.
+	if (facing.north) xMod = -1.0f;
+	if (facing.east) zMod = -1.0f;
 
 	// calculating next coord.
-	ShibaObject bullet(cameraPosition.x, cameraPosition.y, cameraPosition.z);
+	ShibaObject bullet(cameraPosition.x + xMod, cameraPosition.y, cameraPosition.z + zMod);
 
 	bullet.objectName = std::to_string(bullet.tileX) + std::to_string(bullet.tileZ);
 
 	// adding only 1 quad as the object center/bullet hitbox
-	bullet.vertexCol.push_back({ cameraPosition.x, cameraPosition.y, cameraPosition.z, {0, 1.0f, 0} });
+	bullet.vertexCol.push_back({ cameraPosition.x + xMod, cameraPosition.y, cameraPosition.z + zMod, {0, 1.0f, 0} });
 
 	// bind the bullet model to the object.
 	bullet.setLoadGlutFunction(bulletModel);
@@ -1524,6 +1525,7 @@ void shoot() {
 
 	// adding to collection to later iterate through using ID
 	bulletMap.insert_or_assign(bullet.objectName, bullet);
+
 
 }
 
@@ -1606,13 +1608,11 @@ void enemyPathing() {
 
 
 			// if it exists, check if within hitbox of enemy.
-			// !TODO: X axis detection doesn't work properly for some reason. FIX it
-			// !TODO: Switch to melee attack if enemy and player are in the same tile.
 			if (
-				bulletMap.at(id).getRawCoords().x >= item.second.getRawCoords().x - 2.0f
+				/*bulletMap.at(id).getRawCoords().x >= item.second.getRawCoords().x - 5
 				&&
-				bulletMap.at(id).getRawCoords().x <= item.second.getRawCoords().x + 2.0f
-				&&
+				bulletMap.at(id).getRawCoords().x <= item.second.getRawCoords().x + 2.5f
+				&&*/
 				bulletMap.at(id).getRawCoords().z >= item.second.getRawCoords().z - 2.0f
 				&&
 				bulletMap.at(id).getRawCoords().z <= item.second.getRawCoords().z + 2.0f

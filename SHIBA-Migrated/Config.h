@@ -55,7 +55,7 @@ static int currentScene = -1;
 static float DevHudY = 0.0f;		//WHY IS THIS STILL HERE?! REMOVE IT FFS IT SERVES NO PURPOSE
 
 
-static float MAX_VOLUME = 0.5f; //0.5f or 50% by default
+static float MAX_VOLUME = 0.0f; //0.5f or 50% by default
 static irrklang::ISoundEngine* soundEngine = irrklang::createIrrKlangDevice();
 
 // Sound files

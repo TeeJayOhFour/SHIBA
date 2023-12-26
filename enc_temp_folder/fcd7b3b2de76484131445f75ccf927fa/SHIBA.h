@@ -93,7 +93,7 @@ void initMenu() {
 	for (int i = 0; i < 9; i++) {
 		menuOptions.back().value.push_back((i + 1) * 10);
 	}
-	menuOptions.back().head = (int) MAX_VOLUME * 100;
+	menuOptions.back().head = 5;
 	
 	menuOptions.push_back({ "MOUSE SENSITIVITY", MULTI_BUTTON, (int) mouseSpeed });
 	menuOptions.back().value.push_back((int) SENSITIVITY_HIGH);
@@ -317,8 +317,8 @@ static int launch(int argc, char** argv) {
 	cameraPosition.yaw = 270.0; //facing negative X
 
 	// Sound Engine config.
-	soundEngine->setSoundVolume(MAX_VOLUME);
-	soundEngine->play2D(BATTLE_MUSIC_1, true);
+	//soundEngine->setSoundVolume(MAX_VOLUME);
+	//soundEngine->play2D(BATTLE_MUSIC_1, true);
 
 
 	if (possibleSpawns.size() == 0)
@@ -527,10 +527,8 @@ void draw() {
 
 		}
 
-
-		objectCollection.at(i).load();
-		
 		// Loads the object in the world.
+		objectCollection.at(i).load();
 		glDisable(GL_TEXTURE_2D);
 
 		// loading bullets (if any)
@@ -696,6 +694,7 @@ void renderWorldBox() {
 }
 
 
+
 void maintainAspectRatio(int w, int h) {
 
 	glViewport(0, 0, w, h);
@@ -759,12 +758,6 @@ void listenForNormalKeys(unsigned char key, int xx, int yy) {
 
 	case (int)'e':
 		interactWithObj(cameraPosition.frontObject);
-		break;
-
-	case (int)'h':
-		for (auto& item : enemyCollection) {
-			item.second.health = 100;
-		}
 		break;
 
 	case (int)'f':
@@ -964,7 +957,7 @@ void initLevels(std::queue <Level> queue) {
 			y = GROUNDLEVEL;
 
 			// adding to spawn collection if it's a valid spawn loaction.
-			if (levelQueue.front().levelGrid[actualZ][actualX] == SpawnLoc)
+			if (queue.front().levelGrid[actualZ][actualX] == SpawnLoc)
 				addSpawns((size - 1) - actualZ, actualX);
 
 			// Points are below.
@@ -975,108 +968,99 @@ void initLevels(std::queue <Level> queue) {
 			// saving the color (not necessary when loading textures)
 			tile.color = levelQueue.front().levelGrid[actualZ][actualX];
 
-			if (tile.color != Custom || levelQueue.front().customObjects.empty()) {
-				// counting number of objectives
-				if (tile.color == Objective) levelQueue.front().objectives++;
-				// counting enemy spawners
-				if (tile.color == EnemySpawner) {
-					levelQueue.front().enemies++;
-					// adding the ID of the object to a separate vector for
-					// controling spawning.
-					enemySpawnerLocations.push_back(objectCollection.size());
-				}
+			// counting number of objectives
+			if (tile.color == Objective) levelQueue.front().objectives++;
+			// counting enemy spawners
+			if (tile.color == EnemySpawner) {
+				levelQueue.front().enemies++;
+				// adding the ID of the object to a separate vector for
+				// controling spawning.
+				enemySpawnerLocations.push_back(objectCollection.size());
+			}
 
-				if (tile.color == Wall || abs(tile.color) == DoorClosed) tile.texture = true;
-				else tile.texture = false;
+			if (tile.color == Wall || abs(tile.color) == DoorClosed) tile.texture = true;
+			else tile.texture = false;
 
-				// Ground vertexes:
-				// Bottom view
-				// Doors will have some extra vertexes.
-				if (tile.color == DoorClosed || DoorOpen) {
-					// P3 = top left vertex
-					tile.vertexCol.push_back({ x + TILESIZE, y, z - TILESIZE, {0, 1.0f, 0} });
-					// P2 = top right vertex
-					tile.vertexCol.push_back({ x + TILESIZE, y, z + TILESIZE, {0, 1.0f, 0} });
-					// P1 = bottom right vertex
-					tile.vertexCol.push_back({ x - TILESIZE, y, z + TILESIZE, {0, 1.0f, 0} });
-					// P4 = bottom left vertexeee
-					tile.vertexCol.push_back({ x - TILESIZE, y, z - TILESIZE, {0, 1.0f, 0} });
-				}
-
-				// Wall vertexes
-				float wallModifer;
-
-				// Incase it's a note, it will be scaled down to be of only 0.1f height
-				if (tile.color == Notes) wallModifer = 0.1f;
-				// else if (tile.color == Empty) wallModifer = 0.01f;
-				else wallModifer = 20.0f;
-
-				tile.texturePoints.push_back({ 0.0, 0.0 });
-				tile.texturePoints.push_back({ 0.0, (float)repeatScale });
-				tile.texturePoints.push_back({ (float)repeatScale, (float)repeatScale });
-				tile.texturePoints.push_back({ (float)repeatScale, 0.0 });
-
-				// Top view (only visible in god mode)
-				// P1 = bottom right vertex
-				tile.vertexCol.push_back({ x - TILESIZE, y + wallModifer, z + TILESIZE, {0, 1.0f, 0} });
+			// Ground vertexes:
+			// Bottom view
+			// Doors will have some extra vertexes.
+			if (tile.color == DoorClosed || DoorOpen) {
+				// P3 = top left vertex
+				tile.vertexCol.push_back({ x + TILESIZE, y, z - TILESIZE, {0, 1.0f, 0} });
 				// P2 = top right vertex
-				tile.vertexCol.push_back({ x + TILESIZE, y + wallModifer, z + TILESIZE, {0, 1.0f, 0} });
-				// P3 = top left
-				tile.vertexCol.push_back({ x + TILESIZE, y + wallModifer, z - TILESIZE, {0, 1.0f, 0} });
+				tile.vertexCol.push_back({ x + TILESIZE, y, z + TILESIZE, {0, 1.0f, 0} });
+				// P1 = bottom right vertex
+				tile.vertexCol.push_back({ x - TILESIZE, y, z + TILESIZE, {0, 1.0f, 0} });
+				// P4 = bottom left vertexeee
+				tile.vertexCol.push_back({ x - TILESIZE, y, z - TILESIZE, {0, 1.0f, 0} });
+			}
+
+			// Wall vertexes
+			float wallModifer;
+
+			// Incase it's a note, it will be scaled down to be of only 0.1f height
+			if (tile.color == Notes) wallModifer = 0.1f;
+			// else if (tile.color == Empty) wallModifer = 0.01f;
+			else wallModifer = 20.0f;
+
+			tile.texturePoints.push_back({ 0.0, 0.0 });
+			tile.texturePoints.push_back({ 0.0, (float)repeatScale });
+			tile.texturePoints.push_back({ (float)repeatScale, (float)repeatScale });
+			tile.texturePoints.push_back({ (float)repeatScale, 0.0 });
+
+			// Top view (only visible in god mode)
+			// P1 = bottom right vertex
+			tile.vertexCol.push_back({ x - TILESIZE, y + wallModifer, z + TILESIZE, {0, 1.0f, 0} });
+			// P2 = top right vertex
+			tile.vertexCol.push_back({ x + TILESIZE, y + wallModifer, z + TILESIZE, {0, 1.0f, 0} });
+			// P3 = top left
+			tile.vertexCol.push_back({ x + TILESIZE, y + wallModifer, z - TILESIZE, {0, 1.0f, 0} });
+			// P4 = bottom left
+			tile.vertexCol.push_back({ x - TILESIZE, y + wallModifer, z - TILESIZE, {0, 1.0f, 0} });
+
+
+			if (levelQueue.front().levelGrid[actualZ][actualX] > 0) {
+				// -X facing wall Quad
+
+					// P1 = bottom right vertex
+				tile.vertexCol.push_back({ x - TILESIZE, y, z + TILESIZE, {0, -1.0f, 0} });
+				tile.vertexCol.push_back({ x - TILESIZE, y + wallModifer, z + TILESIZE, {0, -1.0f, 0} });
+
 				// P4 = bottom left
-				tile.vertexCol.push_back({ x - TILESIZE, y + wallModifer, z - TILESIZE, {0, 1.0f, 0} });
+				tile.vertexCol.push_back({ x - TILESIZE, y + wallModifer, z - TILESIZE, {0, -1.0f, 0} });
+				tile.vertexCol.push_back({ x - TILESIZE, y, z - TILESIZE, {0, -1.0f, 0} });
 
+				// +X facing wall Quad
+					// P3 = top left
+				tile.vertexCol.push_back({ x + TILESIZE, y, z - TILESIZE, {0, -1.0f, 0} });
+				tile.vertexCol.push_back({ x + TILESIZE, y + wallModifer, z - TILESIZE, {0, -1.0f, 0} });
+				// P2 = top right vertex
+				tile.vertexCol.push_back({ x + TILESIZE, y + wallModifer, z + TILESIZE, {0, -1.0f, 0} });
+				tile.vertexCol.push_back({ x + TILESIZE, y, z + TILESIZE, {0, -1.0f, 0} });
 
-				if (levelQueue.front().levelGrid[actualZ][actualX] > 0) {
-					// -X facing wall Quad
-
-						// P1 = bottom right vertex
-					tile.vertexCol.push_back({ x - TILESIZE, y, z + TILESIZE, {0, -1.0f, 0} });
-					tile.vertexCol.push_back({ x - TILESIZE, y + wallModifer, z + TILESIZE, {0, -1.0f, 0} });
+				// -Z facing wall Quad
 
 					// P4 = bottom left
-					tile.vertexCol.push_back({ x - TILESIZE, y + wallModifer, z - TILESIZE, {0, -1.0f, 0} });
-					tile.vertexCol.push_back({ x - TILESIZE, y, z - TILESIZE, {0, -1.0f, 0} });
+				tile.vertexCol.push_back({ x - TILESIZE, y, z - TILESIZE, {0, -1.0, 0} });
+				tile.vertexCol.push_back({ x - TILESIZE, y + wallModifer, z - TILESIZE, {0, -1.0, 0} });
+				// P3 = top left
+				tile.vertexCol.push_back({ x + TILESIZE, y + wallModifer, z - TILESIZE, {0, -1.0, 0} });
+				tile.vertexCol.push_back({ x + TILESIZE, y, z - TILESIZE, {0, -1.0, 0} });
 
-					// +X facing wall Quad
-						// P3 = top left
-					tile.vertexCol.push_back({ x + TILESIZE, y, z - TILESIZE, {0, -1.0f, 0} });
-					tile.vertexCol.push_back({ x + TILESIZE, y + wallModifer, z - TILESIZE, {0, -1.0f, 0} });
+				// +Z facing wall Quad
+
 					// P2 = top right vertex
-					tile.vertexCol.push_back({ x + TILESIZE, y + wallModifer, z + TILESIZE, {0, -1.0f, 0} });
-					tile.vertexCol.push_back({ x + TILESIZE, y, z + TILESIZE, {0, -1.0f, 0} });
+				tile.vertexCol.push_back({ x + TILESIZE, y, z + TILESIZE, {0, -1.0f, 0,} });
+				tile.vertexCol.push_back({ x + TILESIZE, y + wallModifer, z + TILESIZE, {0, -1.0f, 0} });
+				// P1 = bottom right vertex
+				tile.vertexCol.push_back({ x - TILESIZE, y + wallModifer, z + TILESIZE, {0, -1.0f, 0} });
+				tile.vertexCol.push_back({ x - TILESIZE, y, z + TILESIZE, {0, -1.0f, 0} });
 
-					// -Z facing wall Quad
-
-						// P4 = bottom left
-					tile.vertexCol.push_back({ x - TILESIZE, y, z - TILESIZE, {0, -1.0, 0} });
-					tile.vertexCol.push_back({ x - TILESIZE, y + wallModifer, z - TILESIZE, {0, -1.0, 0} });
-					// P3 = top left
-					tile.vertexCol.push_back({ x + TILESIZE, y + wallModifer, z - TILESIZE, {0, -1.0, 0} });
-					tile.vertexCol.push_back({ x + TILESIZE, y, z - TILESIZE, {0, -1.0, 0} });
-
-					// +Z facing wall Quad
-
-						// P2 = top right vertex
-					tile.vertexCol.push_back({ x + TILESIZE, y, z + TILESIZE, {0, -1.0f, 0,} });
-					tile.vertexCol.push_back({ x + TILESIZE, y + wallModifer, z + TILESIZE, {0, -1.0f, 0} });
-					// P1 = bottom right vertex
-					tile.vertexCol.push_back({ x - TILESIZE, y + wallModifer, z + TILESIZE, {0, -1.0f, 0} });
-					tile.vertexCol.push_back({ x - TILESIZE, y, z + TILESIZE, {0, -1.0f, 0} });
-
-				}
-
-				//! TODO: Assign glut functions outside of engine.
-				// This is for testing only and it works!
-				// tile.setLoadGlutFunction(test);
 			}
-			else {
-				std::cout << "custom object added from init" << std::endl;
 
-				tile.vertexCol.push_back({ x, 0, z, {0, 1.0f, 0} });
-				tile.setLoadGlutFunction(levelQueue.front().customObjects.at(0).glutSolids);
-				
-			}
+			//! TODO: Assign glut functions outside of engine.
+			// This is for testing only and it works!
+			// tile.setLoadGlutFunction(test);
 
 			// finally add the object to the level collection.
 			objectCollection.push_back(tile);
@@ -1111,6 +1095,10 @@ void renderGameElements() {
 
 	// Player HUD elements
 	updateHUD();
+
+	// Pathing algorithms for enemies.
+	//TODO finish this
+	//spawnEnemies();		 
 	
 
 }
@@ -1416,6 +1404,7 @@ void bulletModel(ShibaObject a) {
 
 	// any custom object must have a single ShibaQuad point as center.
 	ShibaQuad center;
+
 	center = a.vertexCol.at(0);
 
 	// moving the render point to elsewhere
@@ -1428,6 +1417,8 @@ void bulletModel(ShibaObject a) {
 	glutSolidCube(1.0f);
 	glPopMatrix();
 	
+	//putting it back to scene origin
+
 }
 
 // handles bullet animation and collision
@@ -1508,6 +1499,8 @@ void bulletPhysics() {
 
 void shoot() {
 
+	//!TODO Need to update make name dynamic which updates after each movement.
+
 	// calculating next coord.
 	ShibaObject bullet(cameraPosition.x, cameraPosition.y, cameraPosition.z);
 
@@ -1524,6 +1517,7 @@ void shoot() {
 
 	// adding to collection to later iterate through using ID
 	bulletMap.insert_or_assign(bullet.objectName, bullet);
+
 
 }
 
@@ -1545,11 +1539,11 @@ void enemyPathing() {
 		//	each position is a quad since we don't need anything else.
 		//	using a function to calculate the tile adjacent to position passed.
 
-		//tempEnemy.pathing.push(tempEnemy.vertexCol.at(0).translateTile(DOWN));
-		//tempEnemy.pathing.push(tempEnemy.vertexCol.at(0).translateTile(RIGHT));
-		//tempEnemy.pathing.push(tempEnemy.vertexCol.at(0).translateTile(UP));
-		//tempEnemy.pathing.push(tempEnemy.vertexCol.at(0).translateTile(LEFT));
-		//tempEnemy.pathing.push(tempEnemy.vertexCol.at(0).translateTile(DOWN));
+		tempEnemy.pathing.push(tempEnemy.vertexCol.at(0).translateTile(DOWN));
+		tempEnemy.pathing.push(tempEnemy.vertexCol.at(0).translateTile(RIGHT));
+		tempEnemy.pathing.push(tempEnemy.vertexCol.at(0).translateTile(UP));
+		tempEnemy.pathing.push(tempEnemy.vertexCol.at(0).translateTile(LEFT));
+		tempEnemy.pathing.push(tempEnemy.vertexCol.at(0).translateTile(DOWN));
 
 		tempEnemy.loopPath = true;
 
@@ -1565,31 +1559,17 @@ void enemyPathing() {
 
 	for (auto& item : enemyCollection) {
 
-		// checking if pathing is empty.
-		if (!item.second.pathing.empty()) {
-			ShibaQuad front = item.second.pathing.front();
-			ShibaQuad current = {
-				item.second.vertexCol.at(0).x,
-				item.second.vertexCol.at(0).y,
-				item.second.vertexCol.at(0).z
-			};
 
-			Position difference = front.toPosition() - current.toPosition();
+		ShibaQuad front = item.second.pathing.front();
+		ShibaQuad current = {
+			item.second.vertexCol.at(0).x,
+			item.second.vertexCol.at(0).y,
+			item.second.vertexCol.at(0).z
+		};
+
+		Position difference = front.toPosition() - current.toPosition();
 		
-			item.second.offset += (difference / (ANIMATIONSTEP * 10.0f));
-
-			if ((front.toPosition() - (current.toPosition() + item.second.offset)).absolute() <= 0.01f) {
-
-				item.second.vertexCol.at(0) = item.second.pathing.front();
-				item.second.offset = { 0.0f, 0.0f, 0.0f };
-
-				if (item.second.loopPath)
-					item.second.pathing.push(front);
-
-				item.second.pathing.pop();
-			}
-
-		}
+		item.second.offset += (difference / (ANIMATIONSTEP * 10.0f));
 
 		item.second.updateTileCoords();
 		
@@ -1606,25 +1586,24 @@ void enemyPathing() {
 
 
 			// if it exists, check if within hitbox of enemy.
-			// !TODO: X axis detection doesn't work properly for some reason. FIX it
-			// !TODO: Switch to melee attack if enemy and player are in the same tile.
-			if (
-				bulletMap.at(id).getRawCoords().x >= item.second.getRawCoords().x - 2.0f
+			// left bound
+			if (bulletMap.at(id).getRawCoords().y <= item.second.getRawCoords().y
 				&&
-				bulletMap.at(id).getRawCoords().x <= item.second.getRawCoords().x + 2.0f
-				&&
-				bulletMap.at(id).getRawCoords().z >= item.second.getRawCoords().z - 2.0f
-				&&
-				bulletMap.at(id).getRawCoords().z <= item.second.getRawCoords().z + 2.0f
-				&&
-				bulletMap.at(id).getRawCoords().y <= item.second.getRawCoords().y + 10.0f
-				&&
-				bulletMap.at(id).getRawCoords().y >= item.second.getRawCoords().y
-				) {
-				std::cout << "HIT" << std::endl;
+				bulletMap.at(id).getRawCoords().y >= 0
+				)
 				item.second.health = 0;
-			}
 
+		}
+
+		if ((front.toPosition() - (current.toPosition() + item.second.offset)).absolute() <= 0.01f) {
+
+			item.second.vertexCol.at(0) = item.second.pathing.front();
+			item.second.offset = { 0.0f, 0.0f, 0.0f };
+
+			if (item.second.loopPath) 
+				item.second.pathing.push(front);
+			
+			item.second.pathing.pop();
 		}
 
 		item.second.loadGlutSolids();

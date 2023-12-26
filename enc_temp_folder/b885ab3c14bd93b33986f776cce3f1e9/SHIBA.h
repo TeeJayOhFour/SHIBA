@@ -1071,11 +1071,11 @@ void initLevels(std::queue <Level> queue) {
 				// tile.setLoadGlutFunction(test);
 			}
 			else {
-				std::cout << "custom object added from init" << std::endl;
 
-				tile.vertexCol.push_back({ x, 0, z, {0, 1.0f, 0} });
+				tile.vertexCol = levelQueue.front().customObjects.at(0).vertexCol;
 				tile.setLoadGlutFunction(levelQueue.front().customObjects.at(0).glutSolids);
 				
+				tile = levelQueue.front().customObjects.at(0);
 			}
 
 			// finally add the object to the level collection.

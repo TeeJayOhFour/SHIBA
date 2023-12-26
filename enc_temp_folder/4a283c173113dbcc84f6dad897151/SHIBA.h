@@ -975,7 +975,7 @@ void initLevels(std::queue <Level> queue) {
 			// saving the color (not necessary when loading textures)
 			tile.color = levelQueue.front().levelGrid[actualZ][actualX];
 
-			if (tile.color != Custom || levelQueue.front().customObjects.empty()) {
+			if (tile.color != Custom) {
 				// counting number of objectives
 				if (tile.color == Objective) levelQueue.front().objectives++;
 				// counting enemy spawners
@@ -1071,11 +1071,11 @@ void initLevels(std::queue <Level> queue) {
 				// tile.setLoadGlutFunction(test);
 			}
 			else {
-				std::cout << "custom object added from init" << std::endl;
-
-				tile.vertexCol.push_back({ x, 0, z, {0, 1.0f, 0} });
-				tile.setLoadGlutFunction(levelQueue.front().customObjects.at(0).glutSolids);
+				levelQueue.front().customObjects.at(0).objectName = tile.objectName;
+				levelQueue.front().customObjects.at(0).vertexCol.push_back({ x, y, z, {0, 1.0f, 0} });
+				levelQueue.front().customObjects.at(0).updateTileCoords();
 				
+				tile = levelQueue.front().customObjects[0];
 			}
 
 			// finally add the object to the level collection.

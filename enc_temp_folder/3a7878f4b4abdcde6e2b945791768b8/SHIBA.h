@@ -527,9 +527,12 @@ void draw() {
 
 		}
 
-
-		objectCollection.at(i).load();
-		
+		if (objectCollection.at(i).color == 7) {
+			objectCollection.at(i).loadGlutSolids();
+		}
+		else {
+			objectCollection.at(i).load();
+		}
 		// Loads the object in the world.
 		glDisable(GL_TEXTURE_2D);
 
@@ -694,6 +697,7 @@ void renderWorldBox() {
 
 	glDisable(GL_TEXTURE_2D);
 }
+
 
 
 void maintainAspectRatio(int w, int h) {
@@ -964,7 +968,7 @@ void initLevels(std::queue <Level> queue) {
 			y = GROUNDLEVEL;
 
 			// adding to spawn collection if it's a valid spawn loaction.
-			if (levelQueue.front().levelGrid[actualZ][actualX] == SpawnLoc)
+			if (queue.front().levelGrid[actualZ][actualX] == SpawnLoc)
 				addSpawns((size - 1) - actualZ, actualX);
 
 			// Points are below.
@@ -975,7 +979,7 @@ void initLevels(std::queue <Level> queue) {
 			// saving the color (not necessary when loading textures)
 			tile.color = levelQueue.front().levelGrid[actualZ][actualX];
 
-			if (tile.color != Custom || levelQueue.front().customObjects.empty()) {
+			if (tile.color != 7) {
 				// counting number of objectives
 				if (tile.color == Objective) levelQueue.front().objectives++;
 				// counting enemy spawners
@@ -1071,11 +1075,8 @@ void initLevels(std::queue <Level> queue) {
 				// tile.setLoadGlutFunction(test);
 			}
 			else {
-				std::cout << "custom object added from init" << std::endl;
-
-				tile.vertexCol.push_back({ x, 0, z, {0, 1.0f, 0} });
-				tile.setLoadGlutFunction(levelQueue.front().customObjects.at(0).glutSolids);
-				
+				queue.front().customObjects[0].objectName = tile.objectName;
+				tile = queue.front().customObjects[0];
 			}
 
 			// finally add the object to the level collection.
@@ -1111,6 +1112,10 @@ void renderGameElements() {
 
 	// Player HUD elements
 	updateHUD();
+
+	// Pathing algorithms for enemies.
+	//TODO finish this
+	//spawnEnemies();		 
 	
 
 }
