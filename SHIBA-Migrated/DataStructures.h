@@ -2,6 +2,10 @@
 #include "Config.h"
 
 enum tileID {
+	Enemy = -5,
+	Player = -4,
+	SplashArt0 = -3,
+	SplashArt1 = -2,
 	SpawnLoc = -1,
 	Empty = 0,
 	EnemySpawner = 1,
@@ -22,6 +26,18 @@ enum Directions {
 	RIGHT = 3
 };
 
+// north, south, east, west. All false by default
+struct Poles {
+	bool north = false, south = false, east = false, west = false;
+
+	void printFacing() const {
+		std::cout << "N: " << north;
+		std::cout << " S: " << south;
+		std::cout << " E: " << east;
+		std::cout << " W: " << west << std::endl;
+	}
+};
+
 struct Position {
 
 	float x = 0.0;
@@ -29,10 +45,13 @@ struct Position {
 	float z = 0.0;
 	float yaw = 0.0;
 	float pitch = 0.0;
+	int identifier;
+
 	// used for checking if a specific button is pressed.
 	int button = -1;
 	int buttonState = -1;
 	int frontObject = -1;
+	Poles facing;
 
 	bool operator == (const Position& a) {
 		if (x == a.x && y == a.y &&
@@ -140,7 +159,37 @@ struct Position {
 			);
 	}
 
+	Position& moveForward() {
+		if (facing.north) this->x += TILESIZE * 2;
+		else if (facing.south) this->x -= TILESIZE * 2;
+		else if (facing.east) this->z += TILESIZE * 2;
+		else if (facing.west) this->z -= TILESIZE * 2;
+		return *this;
+	}
 
+	Position& moveBackward() {
+		if (facing.north) this->x -= TILESIZE * 2;
+		else if (facing.south) this->x += TILESIZE * 2;
+		else if (facing.east) this->z -= TILESIZE * 2;
+		else if (facing.west) this->z += TILESIZE * 2;
+		return *this;
+	}
+
+	Position& moveLeft() {
+		if (facing.north) this->z -= TILESIZE * 2;
+		else if (facing.south) this->z += TILESIZE * 2;
+		else if (facing.east) this->x += TILESIZE * 2;
+		else if (facing.west) this->x -= TILESIZE * 2;
+		return *this;
+	}
+
+	Position& moveRight() {
+		if (facing.north) this->z += TILESIZE * 2;
+		else if (facing.south) this->z -= TILESIZE * 2;
+		else if (facing.east) this->x -= TILESIZE * 2;
+		else if (facing.west) this->x += TILESIZE * 2;
+		return *this;
+	}
 };
 
 struct ShibaQuad {
@@ -212,10 +261,6 @@ struct Motion {
 	bool Forward, Backward, Left, Right;
 };
 
-struct Poles {
-	bool north, south, east, west;
-};
-
 //This function is needed by ShibaObject, so declaring it first.
 static void getColorMod(int id) {
 
@@ -263,16 +308,14 @@ public:
 	bool texture = false;
 	std::vector <ShibaQuad> vertexCol;
 	std::vector <ShibaQuad> texturePoints;
-
+	std::vector <int> rangeIDCol;
 	int health = 100;
 
 	bool loopPath = false;
 	std::queue <ShibaQuad> pathing;
 
-
 	using loadFunction = void (*)(ShibaObject);
 	loadFunction glutSolids = nullptr;
-
 
 	int color = 0, tileX = 0, tileZ = 0;
 
@@ -293,7 +336,7 @@ public:
 		glutSolids = func;
 	}
 
-	void loadGlutSolids() {
+	void loadGlutSolids() const {
 		if (glutSolids != nullptr) {
 			glutSolids(*this);
 		}
@@ -306,7 +349,6 @@ public:
 		// texture code goes here
 
 		if (glutSolids != nullptr) {
-			std::cout << "loaded" << std::endl;
 			loadGlutSolids();
 			return;
 		}
@@ -419,7 +461,7 @@ public:
 		levelGrid = map;
 	}
 
-	void printLevel() {
+	void printLevel() const {
 		int  i, j;
 		for (i = 0; i < 20; i++)
 		{
@@ -440,6 +482,8 @@ public:
 	int health = 100;
 	Position center;
 	std::vector<ShibaQuad> texturePoints;
+	int kills = 0;
+
 
 	Entity(Position& a) {
 		center = a;
@@ -453,7 +497,7 @@ enum menuTypes {
 	MULTI_BUTTON = 2,
 	INPUT_BUTTON = 3,
 	TOGGLE_BUTTON = 4,
-	SLIDER_BUTTON = 5
+	TEXT = 5
 
 };
 
@@ -478,14 +522,14 @@ public:
 		// checking if mouse is within menu text area.
 
 		if (cursor->x > x - padding && cursor->x < x + (this->text.length() * 13)
-			&& cursor->y > y - padding && cursor->y < y + textHeight) {
+			&& cursor->y > y - padding && cursor->y < y + textHeight && type != TEXT) {
 
-			glColor3f(0, 1, 0);
+			glColor4f(0.694f, 0.78f, 0.561f, .8f);
 			hovering = true;
 		}
 		else {
+			glColor4f(0, 0, 0, 0);
 			hovering = false;
-			glColor3f(1, 0, 0);
 		}
 		
 		glBegin(GL_QUADS);
@@ -581,18 +625,29 @@ public:
 			for (MenuOption &item : options) {
 
 				glNormal3f(2, 0, 0);
-				glColor3f(1, 1, 1);
-				glRasterPos2f(x, tempY);
 
 				//Show text
 				std::string finalText = item.text;
 
 				if (item.type == MULTI_BUTTON && item.value.size() != 0) {
-					finalText += "                      [" + std::to_string(item.value.at(item.head)) + " %]";
+			
+					if (item.hovering) glColor4f(0.694f, 0.78f, 0.561f, 1.0f);
+					else glColor3f(1, 1, 1);
+
+					std::string optionVal = "[" + std::to_string(item.value.at(item.head)) + " %]";
+					const unsigned char* convertedVal = reinterpret_cast <const unsigned char*> (optionVal.c_str());
+					glRasterPos2f(x + 420, tempY);
+					glutBitmapString(GLUT_BITMAP_HELVETICA_18, convertedVal);
 				}
 
+				if (item.type == TEXT) glColor3f(0.95f, 0.95f, 0);
+				else glColor3f(1, 1, 1);
+
+				glRasterPos2f(x, tempY);
 				const unsigned char* convertedStr = reinterpret_cast <const unsigned char*> (finalText.c_str());
-				glutBitmapString(GLUT_BITMAP_HELVETICA_18, convertedStr);
+
+				if (item.type == TEXT) glutBitmapString(GLUT_BITMAP_HELVETICA_10, convertedStr);
+				else glutBitmapString(GLUT_BITMAP_HELVETICA_18, convertedStr);
 
 				// Render the button itself.
 				if (item.hovering) {
@@ -629,8 +684,8 @@ public:
 				}
 
 				item.render(x, tempY, padding, textHeight, cursor);
-
-				tempY += 30.0f;
+				if (item.type == TEXT) tempY += 15.0f;
+				else tempY += 30.0f;
 			}
 
 		}

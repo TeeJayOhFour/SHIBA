@@ -15,18 +15,20 @@
 #include <irrKlang.h>
 #include <iomanip>
 
-#define TITLE "SHIBA Engine v1.5 by TJ | Copyright 2023"
+#define TITLE "SHIBA Engine v1.7 by TJ | Copyright 2023"
 // Stupidly Horrendous Implementation of Basic Animations
 
 
 #define array_size(arr) (sizeof(arr) / sizeof(*(arr)))
-constexpr auto SENSITIVITY_HIGH = 80.0f;
-constexpr auto SENSITIVITY_MID = 50.0f;	//Higher is slower.
-constexpr auto SENSITIVITY_LOW = 20.0f;
+constexpr auto DEBUGMODE = true;
+
+constexpr auto SENSITIVITY_HIGH = 120.0f;
+constexpr auto SENSITIVITY_MID = 80.0f;	//Higher is slower.
+constexpr auto SENSITIVITY_LOW = 50.0f;
 constexpr auto FPS = 60;
+
 constexpr auto TILESIZE = 5.0f;	//should be 5
 constexpr auto WALLSIZE = 20.0f;	//should be 20
-constexpr auto DEBUGMODE = TRUE;
 constexpr auto GROUNDLEVEL = -5.0f;
 constexpr auto TO_RADIANS = 3.141592 / 180.0;
 constexpr auto ANIMATIONSTEP = 10.0f;		//Higher value is slower/smoother;
@@ -37,6 +39,11 @@ constexpr auto WIDTH = 16*80;
 constexpr auto HEIGHT = 9*80;
 
 
+constexpr auto PLAYER_DAMAGE = 90;
+constexpr auto BULLET_PIERCING = false;
+
+constexpr auto RANGED_ENEMY_DETECTION_RANGE = 2;
+constexpr auto MELEE_ENEMY_DETECTION_RANGE = 1;
 
 
 static float mouseSpeed = SENSITIVITY_MID;
@@ -47,7 +54,7 @@ static bool wireframe = false;
 static bool collision = true;
 static bool light = true;
 static int lastFPS = 0;
-static int movemenSpeed = 2.0; //Higher is slower.
+static double movementSpeed = 2.0; //Higher is slower.
 
 static int pitchLimit = 60;
 static auto startTime = std::chrono::high_resolution_clock::now();
@@ -55,11 +62,13 @@ static int currentScene = -1;
 static float DevHudY = 0.0f;		//WHY IS THIS STILL HERE?! REMOVE IT FFS IT SERVES NO PURPOSE
 
 
-static float MAX_VOLUME = 0.0f; //0.5f or 50% by default
+static float MAX_VOLUME = 0.3f; //0.3f or 30% by default
 static irrklang::ISoundEngine* soundEngine = irrklang::createIrrKlangDevice();
 
 // Sound files
-static irrklang::ISoundSource* BATTLE_MUSIC_1 = soundEngine->addSoundSourceFromFile("assets/sound/battle.mp3");
+static irrklang::ISoundSource* BATTLE_MUSIC_0 = soundEngine->addSoundSourceFromFile("assets/sound/battle_0.mp3");
+static irrklang::ISoundSource* BATTLE_MUSIC_1 = soundEngine->addSoundSourceFromFile("assets/sound/battle_1.mp3");
+static irrklang::ISoundSource* GLASS_CRACK = soundEngine->addSoundSourceFromFile("assets/sound/glass-crack.mp3");
 
 
 // for FPS calculation

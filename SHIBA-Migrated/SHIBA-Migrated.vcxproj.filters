@@ -21,12 +21,6 @@
     <ClCompile Include="DataStructures.h">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="nn.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="zaki.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SHIBA.h">

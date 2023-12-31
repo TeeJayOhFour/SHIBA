@@ -6,14 +6,17 @@
 // Globals
 //Player navigation info
 Motion motion = { false, false, false, false };
-Poles facing = { false, false, false, false };
 
 struct Position crosshair;
 std::queue <Level> levelQueue;
 std::queue <Menu> menuQueue;
 std::queue <std::string> debugInfoQueue;
 Position cameraPosition;	//camera cords
+
 Entity player(cameraPosition);	//incorporate this throughout the whole code. remove cameraPostion
+
+
+
 //? OR just add convert the camera into a ShibaObject.
 
 Position levelBounds;
@@ -24,20 +27,27 @@ std::vector <int> enemySpawnerLocations;
 // stores the ID of the object along with target postion value.
 std::unordered_map <int, Position> animationQueue;
 std::unordered_map <int, GLuint> textureCollection;
+std::unordered_map <int, int> globalAnimationDelay;
 
 std::unordered_map <std::string, ShibaObject> enemyCollection;
 std::unordered_map <std::string, ShibaObject> bulletMap;
 
 bool levelSpawning = false;
 
+bool playerInCombat = false;
+
+irrklang::ISound* combatMusic = soundEngine->play2D(BATTLE_MUSIC_0, false, true, true);
+
+//!TODO YOU CAN't INTERACT WITH ENEMY SPAWNERS FOR WHATEVER REASON. CHECK INTERACTION FUNCTION IS NOT THE ISSUE
+
 // Prototypes
 void menu();
 void draw();
-void shoot();
 void camera();
 void lighting();
 void devScreen();
 void updateHUD();
+void showSplash(int splash);
 void spawnPlayer();
 void renderScene();
 void idleLoop(int);
@@ -46,6 +56,7 @@ void enemyPathing();
 void bulletPhysics();
 void renderWorldBox();
 void renderGameElements();
+void shoot(Position entity);
 void playQueuedAnimations();
 void addSpawns(int x, int z);
 void enemyModel(ShibaObject a);
@@ -63,6 +74,7 @@ void handleOptionInteraction(std::string option, int value);
 void handleMainMenuInteraction(std::string option, int value);
 void listenForMouseClick(int button, int state, int x, int y);
 void listenForNormalKeysRelease(unsigned char key, int x, int y);
+std::queue<ShibaQuad> aStarImplementation(ShibaObject& start, Position& goal, int range);
 void renderText(float x, float y, int r, int g, int b, const char* string);
 
 
@@ -90,18 +102,21 @@ void initMenu() {
 	// recursively adding all the options possible from 0-100 lol
 	// There could have been an easier way to achieve this howwever ther wasn't enough time to fledge out the menu system.
 
-	for (int i = 0; i < 9; i++) {
+	for (int i = 0; i < 10; i++) {
 		menuOptions.back().value.push_back((i + 1) * 10);
 	}
-	menuOptions.back().head = (int) MAX_VOLUME * 100;
+	menuOptions.back().head = (int) (MAX_VOLUME * 10.0f);
 	
 	menuOptions.push_back({ "MOUSE SENSITIVITY", MULTI_BUTTON, (int) mouseSpeed });
 	menuOptions.back().value.push_back((int) SENSITIVITY_HIGH);
 	menuOptions.back().value.push_back((int) SENSITIVITY_LOW);
 
 
-	menuOptions.push_back({ "FULLSCREEN", TOGGLE_BUTTON, 0 });	//off by default
-	menuOptions.push_back({ "SHOW BLOOD", TOGGLE_BUTTON, 1 });	//on by default
+	menuOptions.push_back({ "FULLSCREEN", TOGGLE_BUTTON, 0 });			//off by default
+	menuOptions.push_back({ "SHOW BLOOD", TOGGLE_BUTTON, 1 });			//on by default
+	menuOptions.push_back({ "[LEFT CLICK]  for decrements", TEXT });	
+	menuOptions.push_back({ "[RIGHT CLICK] for increments", TEXT });	
+
 
 	Menu Options(100, 150, crosshair);
 	Options.setHandler(handleOptionInteraction);
@@ -122,27 +137,37 @@ void initTextures() {
 	//The 1 is temporary as it will get overwritten later by the parser
 	textureCollection.insert_or_assign(BOUNDARY, 1);
 	// Getting image data.
-	Image* image1 = loadTexture("assets/textures/wall.bmp");
+	Image* image = loadTexture("assets/textures/wall.bmp");
 	// Parsing into texture for OpenGL
-	parseTexture(image1, BOUNDARY);
+	parseTexture(image, BOUNDARY);
 
 	textureCollection.insert_or_assign(Empty, 1);
-	Image* image2 = loadTexture("assets/textures/floor.bmp");
-	parseTexture(image2, Empty);
+	image = loadTexture("assets/textures/floor.bmp");
+	parseTexture(image, Empty);
 
 	textureCollection.insert_or_assign(Wall, 1);
-	Image* image3 = loadTexture("assets/textures/tileWall.bmp");
-	parseTexture(image3, Wall);
+	image = loadTexture("assets/textures/tileWall.bmp");
+	parseTexture(image, Wall);
 
 	textureCollection.insert_or_assign(DoorClosed, 1);
-	Image* image4 = loadTexture("assets/textures/door.bmp");
-	parseTexture(image4, DoorClosed);
+	image = loadTexture("assets/textures/door.bmp");
+	parseTexture(image, DoorClosed);
+
+	textureCollection.insert_or_assign(SplashArt0, 1);
+	image = loadTexture("assets/textures/splash0.bmp");
+	parseTexture(image, SplashArt0);	
+	
+	textureCollection.insert_or_assign(SplashArt1, 1);
+	image = loadTexture("assets/textures/splash1.bmp");
+	parseTexture(image, SplashArt1);
+
 
 }
 
 static void initGLFlags() {
 
-	glClearColor(0.0, 0.0, 0.0, 0.0);
+	glColor4f(1, 1, 1, 1);
+
 	glShadeModel(GL_SMOOTH);
 
 	glEnable(GL_DEPTH_TEST);
@@ -152,7 +177,6 @@ static void initGLFlags() {
 	glCullFace(GL_BACK);
 
 	glEnable(GL_COLOR_MATERIAL);
-
 	initTextures();
 
 }
@@ -182,11 +206,11 @@ static void updateHUD() {
 		glColor4f(0, 0, 0, 0.45f);
 		glBegin(GL_QUADS);
 
-		glNormal3f(0, 0, 0);
-		glVertex2f(x - 5, y - 5);
-		glVertex2f(x + (float)(text.length() * 7) + 22, y - 5);
-		glVertex2f(x + (float)(text.length() * 7) + 22, y + 20);
-		glVertex2f(x - 5, y + 20);
+			glNormal3f(0, 0, 0);
+			glVertex2f(x - 5, y - 5);
+			glVertex2f(x + (float)(text.length() * 7) + 22, y - 5);
+			glVertex2f(x + (float)(text.length() * 7) + 22, y + 20);
+			glVertex2f(x - 5, y + 20);
 
 		glEnd();
 
@@ -194,6 +218,13 @@ static void updateHUD() {
 
 	// Player health
 	std::string hp = "Health: " + std::to_string(player.health);
+	std::string score = "Kills: " + std::to_string(player.kills);
+
+	glColor3f(1, 1, 1);
+
+	glRasterPos2f(25.0f, glutGet(GLUT_WINDOW_HEIGHT) - 100.0f);
+	glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, reinterpret_cast <const unsigned char*> (score.c_str()));
+
 
 	if (player.health >= 70) glColor3f(0, 1, 0);
 	else if (player.health >= 30) glColor3f(1, 1, 0);
@@ -202,6 +233,7 @@ static void updateHUD() {
 
 	glRasterPos2f(25.0f, glutGet(GLUT_WINDOW_HEIGHT) - 50.0f);
 	glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, reinterpret_cast <const unsigned char*> (hp.c_str()));
+
 
 	// crosshair let it be a small cube for now.
 
@@ -244,10 +276,10 @@ static void devScreen() {
 
 	std::string cameraFace;
 
-	if (facing.north) cameraFace = "North";
-	if (facing.south) cameraFace = "South";
-	if (facing.east) cameraFace = "East";
-	if (facing.west) cameraFace = "West";
+	if (cameraPosition.facing.north) cameraFace = "North";
+	if (cameraPosition.facing.south) cameraFace = "South";
+	if (cameraPosition.facing.east) cameraFace = "East";
+	if (cameraPosition.facing.west) cameraFace = "West";
 
 	std::string frontObject;
 
@@ -306,7 +338,6 @@ static void devScreen() {
 
 static int launch(int argc, char** argv) {
 
-
 	std::cout << TITLE << std::endl;
 
 	// Initializing position data.
@@ -315,11 +346,11 @@ static int launch(int argc, char** argv) {
 	cameraPosition.z = 0.0;
 	cameraPosition.pitch = 0.0;
 	cameraPosition.yaw = 270.0; //facing negative X
+	cameraPosition.facing.north = true;
+	cameraPosition.identifier = Player;
 
 	// Sound Engine config.
 	soundEngine->setSoundVolume(MAX_VOLUME);
-	soundEngine->play2D(BATTLE_MUSIC_1, true);
-
 
 	if (possibleSpawns.size() == 0)
 		throw std::invalid_argument(levelQueue.front().name + " doesn't have a spawn location. SHIBA shutting down...");
@@ -410,6 +441,7 @@ void renderScene(void) {
 	// FPS calulation.
 	frameCount++;
 	finalTime = time(NULL);
+
 	if (finalTime - initTime > 0) {
 		lastFPS = frameCount / (finalTime - initTime);
 		frameCount = 0;
@@ -418,14 +450,58 @@ void renderScene(void) {
 
 }
 
+void showSplash(int splash) {
+
+	glColor3f(1, 1, 1);
+
+	glBindTexture(GL_TEXTURE_2D, textureCollection.at(splash));
+
+
+	// setting texture to repeat
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	glEnable(GL_TEXTURE_2D);
+	
+	glBegin(GL_QUADS);
+
+		glNormal3f(0, -1, 0);
+
+		glTexCoord2f(0.0, 0.0);
+		glVertex2f(0, 0);
+
+		glTexCoord2f(1.0, 0.0);
+		glVertex2f(glutGet(GLUT_WINDOW_WIDTH), 0);
+		
+		glTexCoord2f(1.0, 1.0);
+		glVertex2f(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
+		
+		glTexCoord2f(0.0, 1.0);
+		glVertex2f(0, glutGet(GLUT_WINDOW_HEIGHT));
+		
+	glEnd();
+
+	glDisable(GL_TEXTURE);
+}
+
 void menu() {
 
 	toggleOverlayMode(true);
+	toggleTransparency(true);
+		
+		int result = animateTex(SplashArt0);
+		//	checking if animation playback has started.
 
-		menuQueue.front().show();
+		if (result == -1) {
+			menuQueue.front().show();
+			showSplash(SplashArt0);
+		}
+		else if (result == 1) currentScene = -1;
+		else showSplash(SplashArt1);
+		
 
+	toggleTransparency(false);
 	toggleOverlayMode(false);
-	
+
 
 }
 
@@ -496,10 +572,17 @@ void handleMainMenuInteraction(std::string option, int value = -1) {
 
 	}
 
-	if (option == "START GAME") currentScene = -1;
+	if (option == "START GAME") {
+
+		currentScene = -1;	//	remove this code later
+		animateTex(SplashArt0, 600);
+		// playing the crack sound.
+		soundEngine->play2D(GLASS_CRACK);
+
+
+	}
 
 }
-
 
 
 // Draws the level based on the item in queue.
@@ -515,6 +598,7 @@ void draw() {
 
 	// loops through a collection of 3D models and draws them in level.
 	for (int i = 0; i < objectCollection.size(); i++) {
+
 		// Setting the texture if available.
 		if (objectCollection.at(i).texture && !wireframe) {
 
@@ -534,16 +618,15 @@ void draw() {
 		glDisable(GL_TEXTURE_2D);
 
 		// loading bullets (if any)
-		for (auto& b : bulletMap) {
-			b.second.loadGlutSolids();
-		}
-
+		for (auto& b : bulletMap) b.second.loadGlutSolids();
+		
 
 	}
 
 	renderWorldBox();
 
 	return;
+
 }
 
 void renderWorldBox() {
@@ -695,7 +778,6 @@ void renderWorldBox() {
 	glDisable(GL_TEXTURE_2D);
 }
 
-
 void maintainAspectRatio(int w, int h) {
 
 	glViewport(0, 0, w, h);
@@ -723,9 +805,11 @@ void listenForNormalKeys(unsigned char key, int xx, int yy) {
 		break;
 
 	case (int)'z':
+
 		int tpX, tpZ;
 		std::cout << "Enter new tile cords:";
 		std::cin >> tpX >> tpZ;
+
 		std::cout << "Teleported to tile " << tpX << " " << tpZ << std::endl;
 		cameraPosition.x = tpX * 10;
 		cameraPosition.z = tpZ * 10;
@@ -733,8 +817,12 @@ void listenForNormalKeys(unsigned char key, int xx, int yy) {
 		break;
 
 	case (int)'m':
-		std::cout << "SOUNDS STOPPED" << std::endl;
-		soundEngine->removeAllSoundSources();
+		/*std::cout << "SOUNDS STOPPED" << std::endl;
+		soundEngine->removeAllSoundSources();*/
+
+		playerInCombat = !playerInCombat;
+		std::cout << "Combat: " << playerInCombat << std::endl;
+
 		break;
 
 	case (int)'q':
@@ -742,8 +830,11 @@ void listenForNormalKeys(unsigned char key, int xx, int yy) {
 		for (int id : enemySpawnerLocations) {
 			//triggering all enemy spawners at once
 			//players can interact and trigger as well
+
 			//! Don't allow players to interact with spawners. Only destroy.
+
 			std::cout << "All enemy spawners triggered via hotkey" << std::endl;
+			std::cout << "ID: " << id << std::endl;
 			interactWithObj(id);	//This starts an animation.
 			levelSpawning = true;
 		}
@@ -756,7 +847,16 @@ void listenForNormalKeys(unsigned char key, int xx, int yy) {
 	case (int)']':
 		player.health += 10;
 		break;
+	case (int)'/':
 
+		int id;
+
+		std::cout << "Enter Object ID:";
+		std::cin >> id;
+
+		objectCollection.at(id).color = Boss;
+
+		break;
 	case (int)'e':
 		interactWithObj(cameraPosition.frontObject);
 		break;
@@ -782,16 +882,20 @@ void listenForNormalKeys(unsigned char key, int xx, int yy) {
 	case (int)'t':
 		track = !track;
 		track ? glutSetCursor(GLUT_CURSOR_NONE) : glutSetCursor(GLUT_CURSOR_INHERIT);
-
 		break;
+
 	case (int)'p':
 		levelQueue.front().printLevel();
 		break;
 
 	case (int)'y':
 		wireframe = !wireframe;
+
+		movementSpeed = wireframe ? 0.5 : 2.0;
 		glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
+
 		break;
+
 	case 'W':
 	case 'w':
 		motion.Forward = true;
@@ -873,7 +977,7 @@ void listenForMouseClick(int button, int state, int x, int y) {
 	switch (button) {
 	case 0:
 		// incase it's being held down, don't do anything.
-		if (state && track) shoot();
+		if (state && track) shoot(cameraPosition);
 		// else do menu stuff
 		break;
 	}
@@ -917,7 +1021,7 @@ void listenForMouseMovement(int x, int y) {
 		else finalFacing.west = true;
 
 		cameraPosition.pitch += (float)dev_y / mouseSpeed;
-		facing = finalFacing;
+		cameraPosition.facing = finalFacing;
 
 	}
 
@@ -943,12 +1047,12 @@ void initLevels(std::queue <Level> queue) {
 	// clearing spawn locations of previous level.
 	possibleSpawns.clear();
 	objectCollection.clear();
+	enemySpawnerLocations.clear();
 
 	int size = array_size(*queue.front().levelGrid);
 	float x = 0.0, y = GROUNDLEVEL, z = 0.0;
 
-	if (DEBUGMODE)
-		std::cout << "[Method] initLevels: Number of levels is " << queue.size() << std::endl;
+	if (DEBUGMODE) std::cout << "[Method] initLevels: Number of levels is " << queue.size() << std::endl;
 
 	levelQueue = queue;
 	std::cout << "Initializing Level..." << std::endl;
@@ -973,7 +1077,7 @@ void initLevels(std::queue <Level> queue) {
 			tile.objectName = std::to_string(levelQueue.front().levelGrid[actualZ][actualX]);
 
 			// saving the color (not necessary when loading textures)
-			tile.color = levelQueue.front().levelGrid[actualZ][actualX];
+			tile.color = queue.front().levelGrid[actualZ][actualX];
 
 			if (tile.color != Custom || levelQueue.front().customObjects.empty()) {
 				// counting number of objectives
@@ -984,6 +1088,7 @@ void initLevels(std::queue <Level> queue) {
 					// adding the ID of the object to a separate vector for
 					// controling spawning.
 					enemySpawnerLocations.push_back(objectCollection.size());
+
 				}
 
 				if (tile.color == Wall || abs(tile.color) == DoorClosed) tile.texture = true;
@@ -992,7 +1097,7 @@ void initLevels(std::queue <Level> queue) {
 				// Ground vertexes:
 				// Bottom view
 				// Doors will have some extra vertexes.
-				if (tile.color == DoorClosed || DoorOpen) {
+				if (tile.color == DoorClosed || tile.color == DoorOpen) {
 					// P3 = top left vertex
 					tile.vertexCol.push_back({ x + TILESIZE, y, z - TILESIZE, {0, 1.0f, 0} });
 					// P2 = top right vertex
@@ -1030,7 +1135,7 @@ void initLevels(std::queue <Level> queue) {
 				if (levelQueue.front().levelGrid[actualZ][actualX] > 0) {
 					// -X facing wall Quad
 
-						// P1 = bottom right vertex
+					// P1 = bottom right vertex
 					tile.vertexCol.push_back({ x - TILESIZE, y, z + TILESIZE, {0, -1.0f, 0} });
 					tile.vertexCol.push_back({ x - TILESIZE, y + wallModifer, z + TILESIZE, {0, -1.0f, 0} });
 
@@ -1066,12 +1171,8 @@ void initLevels(std::queue <Level> queue) {
 
 				}
 
-				//! TODO: Assign glut functions outside of engine.
-				// This is for testing only and it works!
-				// tile.setLoadGlutFunction(test);
 			}
 			else {
-				std::cout << "custom object added from init" << std::endl;
 
 				tile.vertexCol.push_back({ x, 0, z, {0, 1.0f, 0} });
 				tile.setLoadGlutFunction(levelQueue.front().customObjects.at(0).glutSolids);
@@ -1083,14 +1184,17 @@ void initLevels(std::queue <Level> queue) {
 
 			x += TILESIZE * 2;
 		}
+
 		z += TILESIZE * 2;
 		levelBounds.x = x;
 		x = 0.0;
+
 	}
+
 	levelBounds.z = z;
 
-	objectCollection.shrink_to_fit();
-	possibleSpawns.shrink_to_fit();
+	//objectCollection.shrink_to_fit();
+	//possibleSpawns.shrink_to_fit();
 	resetCamera();
 
 }
@@ -1099,6 +1203,53 @@ void renderGameElements() {
 
 	//	Locks or unlocks the cursor
 	if (track) glutWarpPointer(WIDTH / 2, HEIGHT / 2);
+
+	// Game sound management
+	if (playerInCombat) {
+
+		// assigning new sound if nothing is there.
+		if (!combatMusic) combatMusic = soundEngine->play2D(BATTLE_MUSIC_0, false, true, true);
+
+		//start audio
+		combatMusic->setIsPaused(false);
+
+		// checking if the build up is done playing
+		if (combatMusic->isFinished()) 
+			combatMusic = soundEngine->play2D(BATTLE_MUSIC_1, true, false, true);
+
+	}
+	else {
+
+		//checking which sound is currently loaded
+		//if sound 0, go to next part then fade it out.
+		if (combatMusic->getSoundSource()->getName() == BATTLE_MUSIC_0->getName()) {
+			
+			// Set to sound 1.
+			if (combatMusic->isFinished()) 
+				combatMusic = soundEngine->play2D(BATTLE_MUSIC_1, false, false, true);
+
+		}
+		else if (combatMusic->getPlayPosition() != 0 || combatMusic->getPlayPosition() != -1) {
+
+			float i = (float) animateTex(0, 1000, true);
+			
+			// checking if fade out or sound has finished playing
+			if ((int) i != 1) combatMusic->setVolume(i / 1000.0f);
+
+			if (combatMusic->isFinished() || (int) i == 1) {
+				combatMusic = soundEngine->play2D(BATTLE_MUSIC_0, false, true, true);
+
+				//std::cout << "Sound finished" << std::endl;
+
+			}
+
+			//std::cout << "No combat | current volume: " << combatMusic->getVolume() << " : " << i << std::endl;
+		}
+		
+
+		
+	}
+	
 
 	camera();	//player
 	draw();		//level/world
@@ -1121,23 +1272,23 @@ void camera() {
 
 	// Calculate new coordinate depending on key directions held.
 	if (motion.Forward) {
-		newX += cos((cameraPosition.yaw + 90) * TO_RADIANS) / movemenSpeed;
-		newZ -= sin((cameraPosition.yaw + 90) * TO_RADIANS) / movemenSpeed;
+		newX += cos((cameraPosition.yaw + 90) * TO_RADIANS) / movementSpeed;
+		newZ -= sin((cameraPosition.yaw + 90) * TO_RADIANS) / movementSpeed;
 	}
 
 	if (motion.Backward) {
-		newX += cos((cameraPosition.yaw + 90 + 180) * TO_RADIANS) / movemenSpeed;
-		newZ -= sin((cameraPosition.yaw + 90 + 180) * TO_RADIANS) / movemenSpeed;
+		newX += cos((cameraPosition.yaw + 90 + 180) * TO_RADIANS) / movementSpeed;
+		newZ -= sin((cameraPosition.yaw + 90 + 180) * TO_RADIANS) / movementSpeed;
 	}
 
 	if (motion.Left) {
-		newX += cos((cameraPosition.yaw + 90 + 90) * TO_RADIANS) / movemenSpeed;
-		newZ -= sin((cameraPosition.yaw + 90 + 90) * TO_RADIANS) / movemenSpeed;
+		newX += cos((cameraPosition.yaw + 90 + 90) * TO_RADIANS) / movementSpeed;
+		newZ -= sin((cameraPosition.yaw + 90 + 90) * TO_RADIANS) / movementSpeed;
 	}
 
 	if (motion.Right) {
-		newX += cos((cameraPosition.yaw + 90 - 90) * TO_RADIANS) / movemenSpeed;
-		newZ -= sin((cameraPosition.yaw + 90 - 90) * TO_RADIANS) / movemenSpeed;
+		newX += cos((cameraPosition.yaw + 90 - 90) * TO_RADIANS) / movementSpeed;
+		newZ -= sin((cameraPosition.yaw + 90 - 90) * TO_RADIANS) / movementSpeed;
 	}
 
 	if (collisionCheck(1, newX, newZ)) cameraPosition.x += newX;
@@ -1246,6 +1397,7 @@ void spawnPlayer() {
 }
 void checkForInteraction(Position& entity) {
 
+
 	int size = array_size(*levelQueue.front().levelGrid);
 	int xModifier = 1, zModifier = 20;
 	//int worldX = cameraPosition.toTile().x, worldZ = cameraPosition.toTile().z;
@@ -1253,35 +1405,39 @@ void checkForInteraction(Position& entity) {
 	int id = (((entity.toTile().z) * size) + (entity.toTile().x));
 
 	// out of bounds prevention
-	if (facing.north) {	// X+
+	if (entity.facing.north) {	// X+
 		// worldX++;
 		id += xModifier;
 	}
-	else if (facing.south) {	// X-
+	else if (entity.facing.south) {	// X-
 		// worldX--;
 		id -= xModifier;
 	}
-	else if (facing.east) {	// Z+
+	else if (entity.facing.east) {	// Z+
 		// worldZ++;
 		id += zModifier;
 	}
-	else {	// Z- (West)
+	else if (entity.facing.west) {	// Z- (West) 
 		// worldZ--;
 		id -= zModifier;
 	}
+	// not using else because this function can also be used to get the object ID of the tile you're standing on.
 
-	if (id < 0 || id >= (size * size))
-		id = -1;
+	if (id < 0 || id >= (size * size)) id = -1;
 
-	if ((facing.east && entity.toTile().z == size - 1) || (facing.west && entity.toTile().z == 0))
-		id = -1;
+	if ((entity.facing.east && entity.toTile().z >= size - 1) || (entity.facing.west && entity.toTile().z <= 0)) id = -1;
+
+	if ((entity.facing.north && entity.toTile().x >= size - 1) || (entity.facing.south && entity.toTile().x <= 0)) id = -1;
 
 	// finally setting the object
 	entity.frontObject = id;
 
+
 }
 
 void interactWithObj(int objectID) {
+
+	//! TODO Check if player is trying to interact with object, in which case don't let them or make them do a melee attack.
 
 	int size = array_size(*levelQueue.front().levelGrid);
 
@@ -1291,8 +1447,9 @@ void interactWithObj(int objectID) {
 	}
 
 	std::cout << "Interacting with: ";
-	std::cout << objectID << " ";
-	std::cout << objectCollection.at(objectID).tileX << " ";
+	std::cout << objectID << " X: ";
+
+	std::cout << objectCollection.at(objectID).tileX << " Z: ";
 	std::cout << objectCollection.at(objectID).tileZ << std::endl;
 
 	queueAnimation(objectID, ((size - 1) - objectCollection.at(objectID).tileX), objectCollection.at(objectID).tileZ);
@@ -1303,6 +1460,7 @@ void queueAnimation(int id, int x, int z) {
 
 	int tileValue = levelQueue.front().levelGrid[x][z];
 	std::cout << tileValue << " From Queue" << std::endl;
+
 	Position target;
 
 	switch (tileValue) {
@@ -1425,7 +1583,7 @@ void bulletModel(ShibaObject a) {
 		center.x + a.offset.x,
 		center.y + a.offset.y,
 		center.z + a.offset.z);
-	glutSolidCube(1.0f);
+	glutSolidCube(0.5f);
 	glPopMatrix();
 	
 }
@@ -1435,7 +1593,7 @@ void bulletPhysics() {
 
 	if (bulletMap.empty()) return;
 
-	std::cout << "Bullets in motion: " << bulletMap.size() << std::endl;
+	//std::cout << "Bullets in motion: " << bulletMap.size() << std::endl;
 	
 	std::unordered_map <std::string, ShibaObject> tempMap = bulletMap;
 
@@ -1473,9 +1631,16 @@ void bulletPhysics() {
 
 
 		// Check if bullet collides with any walls or obstacles here
-		if (levelQueue.front().levelGrid[finalX][item.second.tileZ] == Wall) {
+		if (levelQueue.front().levelGrid[finalX][item.second.tileZ] == Wall
+			|| 
+			levelQueue.front().levelGrid[finalX][item.second.tileZ] == Objective
+			||
+			levelQueue.front().levelGrid[finalX][item.second.tileZ] == Custom
+			) {
+			//if (levelQueue.front().levelGrid[finalX][item.second.tileZ] == EnemySpawner) 
+			// Implement this later
 			bulletMap.erase(item.second.objectName);
-			std::cout << "Bullet killed by wall in tile (X:Z):  " << item.second.tileX << " : " << item.second.tileZ << std::endl;
+			//std::cout << "Bullet killed by wall in tile (X:Z):  " << item.second.tileX << " : " << item.second.tileZ << std::endl;
 			continue;	// No need to check for level bound collisions afterwards
 		}
 
@@ -1497,7 +1662,7 @@ void bulletPhysics() {
 			|| current.toPosition().z + item.second.offset.z < 0.0f - TILESIZE || current.toPosition().x + item.second.offset.z > levelBounds.z) {
 			
 			bulletMap.erase(item.second.objectName);
-			std::cout << "Bullet killed in tile (X:Z):  " << item.second.tileX << " : " << item.second.tileZ << std::endl;
+			//std::cout << "Bullet killed in tile (X:Z):  " << item.second.tileX << " : " << item.second.tileZ << std::endl;
 		}
 
 	}
@@ -1506,21 +1671,22 @@ void bulletPhysics() {
 
 }
 
-void shoot() {
+void shoot(Position entity) {
 
 	// calculating next coord.
-	ShibaObject bullet(cameraPosition.x, cameraPosition.y, cameraPosition.z);
+	ShibaObject bullet(entity.x, entity.y, entity.z);
 
 	bullet.objectName = std::to_string(bullet.tileX) + std::to_string(bullet.tileZ);
+	bullet.offset.identifier = entity.identifier;
 
 	// adding only 1 quad as the object center/bullet hitbox
-	bullet.vertexCol.push_back({ cameraPosition.x, cameraPosition.y, cameraPosition.z, {0, 1.0f, 0} });
+	bullet.vertexCol.push_back({ entity.x, entity.y, entity.z, {0, 1.0f, 0} });
 
 	// bind the bullet model to the object.
 	bullet.setLoadGlutFunction(bulletModel);
 
-	bullet.offset.yaw = cameraPosition.yaw;
-	bullet.offset.pitch = cameraPosition.pitch;
+	bullet.offset.yaw = entity.yaw;
+	bullet.offset.pitch = entity.pitch;
 
 	// adding to collection to later iterate through using ID
 	bulletMap.insert_or_assign(bullet.objectName, bullet);
@@ -1530,31 +1696,76 @@ void shoot() {
 void enemyPathing() {
 
 	//	Spawn new enemies if needed.
+	//	change this to spawn enemies proportional to game level and amount of spawners.
 	if (levelSpawning && enemyCollection.size() < 1) {
 
-		ShibaObject tempEnemy(50.0, GROUNDLEVEL, 50.0);
+		int id = enemySpawnerLocations.at(randomInt(0, enemySpawnerLocations.size() - 1));
 
-		tempEnemy.vertexCol.push_back(
-			{ 50.0, GROUNDLEVEL, 50.0 , {0.0, -1.0f, 0.0} }
-		);
+		float spawnerX = objectCollection.at(id).tileX * 10;
+		float spawnerZ = objectCollection.at(id).tileZ * 10;
+		
+		//	making a list of empty tiles the enemy can get out to from the spawner.
+		std::vector <int> emptySpots;
+		
+		Position tempEnemy;
+		tempEnemy.x = spawnerX;
+		tempEnemy.z = spawnerZ;
 
-		tempEnemy.objectName = std::to_string(tempEnemy.vertexCol.at(0).x) + std::to_string(tempEnemy.vertexCol.at(0).z);
-		tempEnemy.setLoadGlutFunction(enemyModel);
+		for (int i = 0; i < 4; i++) {
 
-		//	for now just go around in a circle
-		//	each position is a quad since we don't need anything else.
-		//	using a function to calculate the tile adjacent to position passed.
+			tempEnemy.facing = { i == 0, i == 1, i == 2, i == 3 };
+			checkForInteraction(tempEnemy);
 
-		//tempEnemy.pathing.push(tempEnemy.vertexCol.at(0).translateTile(DOWN));
-		//tempEnemy.pathing.push(tempEnemy.vertexCol.at(0).translateTile(RIGHT));
-		//tempEnemy.pathing.push(tempEnemy.vertexCol.at(0).translateTile(UP));
-		//tempEnemy.pathing.push(tempEnemy.vertexCol.at(0).translateTile(LEFT));
-		//tempEnemy.pathing.push(tempEnemy.vertexCol.at(0).translateTile(DOWN));
 
-		tempEnemy.loopPath = true;
+			if (tempEnemy.frontObject != -1 && objectCollection.at(tempEnemy.frontObject).color == Empty) {
+					
+				tempEnemy.facing.printFacing();
+				emptySpots.push_back(tempEnemy.frontObject);
+				//std::cout << "\nFront ID " << tempEnemy.frontObject << std::endl;
 
-		enemyCollection.insert_or_assign(tempEnemy.objectName, tempEnemy);
-		std::cout << "Added enemy: " << tempEnemy.objectName << std::endl;
+			}
+
+		}
+
+		if (emptySpots.size() == 0) {
+			std::cout << "\nError for spawner in X: " << spawnerX << " Z:" << spawnerZ << " ObjectID: " << id;
+			std::cout << "\nNo free space available for enemies to spawn. Skipping this spawner" << std::endl;
+		}
+		else {
+
+			//std::cout << emptySpots.size() << std::endl;
+			int randID = emptySpots.size() == 1 ? 0 : randomInt(0, emptySpots.size() - 1);
+
+			spawnerX = objectCollection.at(emptySpots.at(randID)).tileX * 10;
+			spawnerZ = objectCollection.at(emptySpots.at(randID)).tileZ * 10;
+
+			ShibaObject tempEnemy(
+				spawnerX, GROUNDLEVEL, spawnerZ
+			);
+			tempEnemy.offset.identifier = Enemy;
+
+			tempEnemy.vertexCol.push_back({ 
+				spawnerX, GROUNDLEVEL, spawnerZ, {0.0, -1.0f, 0.0} 
+			});
+
+			tempEnemy.objectName = std::to_string(tempEnemy.vertexCol.at(0).x) + std::to_string(tempEnemy.vertexCol.at(0).z);
+			tempEnemy.setLoadGlutFunction(enemyModel);
+
+			// initialize with with a path towards player. ONLY if they're within 5 tiles
+			tempEnemy.pathing = aStarImplementation(tempEnemy, cameraPosition, RANGED_ENEMY_DETECTION_RANGE);
+
+			tempEnemy.pathing.push(tempEnemy.vertexCol.at(0).translateTile(DOWN));
+			tempEnemy.pathing.push(tempEnemy.vertexCol.at(0).translateTile(RIGHT));
+			tempEnemy.pathing.push(tempEnemy.vertexCol.at(0).translateTile(UP));
+			tempEnemy.pathing.push(tempEnemy.vertexCol.at(0).translateTile(LEFT));
+			tempEnemy.pathing.push(tempEnemy.vertexCol.at(0).translateTile(DOWN));
+
+			tempEnemy.loopPath = true;
+
+			enemyCollection.insert_or_assign(tempEnemy.objectName, tempEnemy);
+			//std::cout << "Added enemy: " << tempEnemy.objectName << std::endl;
+		}
+
 
 	}
 
@@ -1565,6 +1776,7 @@ void enemyPathing() {
 
 	for (auto& item : enemyCollection) {
 
+
 		// checking if pathing is empty.
 		if (!item.second.pathing.empty()) {
 			ShibaQuad front = item.second.pathing.front();
@@ -1574,8 +1786,20 @@ void enemyPathing() {
 				item.second.vertexCol.at(0).z
 			};
 
+			if (lastKey == (int)'x') {
+				shoot(item.second.getRawCoords());
+				lastKey = -1;
+			}
+
+			item.second.offset.yaw = cameraPosition.yaw + 180;
+
 			Position difference = front.toPosition() - current.toPosition();
-		
+
+			if (difference.x < 0) item.second.offset.facing.south = true;
+			else if (difference.x > 0) item.second.offset.facing.north = true;
+			else if (difference.z < 0) item.second.offset.facing.west = true;
+			else if (difference.z > 0) item.second.offset.facing.east = true;
+
 			item.second.offset += (difference / (ANIMATIONSTEP * 10.0f));
 
 			if ((front.toPosition() - (current.toPosition() + item.second.offset)).absolute() <= 0.01f) {
@@ -1594,44 +1818,154 @@ void enemyPathing() {
 		item.second.updateTileCoords();
 		
 		std::string id = std::to_string(item.second.tileX) + std::to_string(item.second.tileZ);
+		item.second.loadGlutSolids();
 		
 		// collision check for enemies with bullets
-		if (bulletMap.count(id) != 0) {
+		if (bulletMap.count(id) != 0 && bulletMap.at(id).offset.identifier != item.second.offset.identifier) {
 			
-			std::cout << "BULLET" << std::endl;
-			std::cout << "x: " << bulletMap.at(id).getRawCoords().x << "\ty: " << bulletMap.at(id).getRawCoords().y << "\tz:" << bulletMap.at(id).getRawCoords().z <<std::endl;
+			//std::cout << "BULLET" << std::endl;
+			//std::cout << "x: " << bulletMap.at(id).getRawCoords().x << "\ty: " << bulletMap.at(id).getRawCoords().y << "\tz:" << bulletMap.at(id).getRawCoords().z <<std::endl;
 
-			std::cout << "ENEMY" << std::endl;
-			std::cout << "x: " << item.second.getRawCoords().x << "\ty: " << item.second.getRawCoords().y << "\tz:" << item.second.getRawCoords().z << std::endl;
+			//std::cout << "ENEMY" << std::endl;
+			//std::cout << "x: " << item.second.getRawCoords().x << "\ty: " << item.second.getRawCoords().y << "\tz:" << item.second.getRawCoords().z << std::endl;
+
+			bool xPass1 = bulletMap.at(id).getRawCoords().x >= item.second.getRawCoords().x - 5.0f;
+			bool xPass2 = bulletMap.at(id).getRawCoords().x <= item.second.getRawCoords().x + 5.0f;
+																							  
+			bool zPass1 = bulletMap.at(id).getRawCoords().z >= item.second.getRawCoords().z - 5.0f;
+			bool zPass2 = bulletMap.at(id).getRawCoords().z <= item.second.getRawCoords().z + 5.0f;
+
+			bool yPass1 = bulletMap.at(id).getRawCoords().y <= item.second.getRawCoords().y + 10.0f;
+			bool yPass2 = bulletMap.at(id).getRawCoords().y >= item.second.getRawCoords().y;
+
+			//std::cout << "PASSES:" << std::endl;
+			//std::cout << "xPass 1: " << xPass1 << std::endl;
+			//std::cout << "xPass 2: " << xPass2 << std::endl;
+
+			//std::cout << "yPass 1: " << yPass1 << std::endl;
+			//std::cout << "yPass 2: " << yPass2 << std::endl;
+
+			//std::cout << "zPass 1: " << zPass1 << std::endl;
+			//std::cout << "zPass 2: " << zPass2 << std::endl;
 
 
 			// if it exists, check if within hitbox of enemy.
 			// !TODO: X axis detection doesn't work properly for some reason. FIX it
 			// !TODO: Switch to melee attack if enemy and player are in the same tile.
-			if (
-				bulletMap.at(id).getRawCoords().x >= item.second.getRawCoords().x - 2.0f
-				&&
-				bulletMap.at(id).getRawCoords().x <= item.second.getRawCoords().x + 2.0f
-				&&
-				bulletMap.at(id).getRawCoords().z >= item.second.getRawCoords().z - 2.0f
-				&&
-				bulletMap.at(id).getRawCoords().z <= item.second.getRawCoords().z + 2.0f
-				&&
-				bulletMap.at(id).getRawCoords().y <= item.second.getRawCoords().y + 10.0f
-				&&
-				bulletMap.at(id).getRawCoords().y >= item.second.getRawCoords().y
-				) {
-				std::cout << "HIT" << std::endl;
-				item.second.health = 0;
+			if (xPass1 && xPass2 && zPass1 && zPass2 && yPass1 && yPass2) {
+				//std::cout << "HIT" << std::endl;
+				item.second.health -= PLAYER_DAMAGE;
+
+				if (item.second.health <= 0) {
+					enemyCollection.erase(item.first);
+					player.kills++;
+					return;
+				}
+
+				if (!BULLET_PIERCING) bulletMap.erase(id);
+					
 			}
 
 		}
 
-		item.second.loadGlutSolids();
+
+		//updating range data.
+		aStarImplementation(item.second, cameraPosition, RANGED_ENEMY_DETECTION_RANGE);
+
 
 	}
 
 
+}
+
+std::queue<ShibaQuad> aStarImplementation(ShibaObject& entity, Position& goal, int range) {
+	
+	// enemy range for detection.
+	std::vector <int> objectIDRange;
+	std::queue <ShibaQuad> rr;
+
+	Position tempPos = entity.getRawCoords();
+
+	// SHOOT a bullet trajectory towards player, if there's any obstacles between enemy and player within the trajectory. Then visible (green) else in range for detection (blue)
+	
+	/*
+	// taking the enemy towards the edge of the range
+	tempPos.z -= range * 10;
+
+	//	Only check north and south sides.
+	for (int r = 0; r < range * 2 + 1; r++) {
+
+		// adding currently standing tile.
+		tempPos.facing = { false, false, false, false };
+		checkForInteraction(tempPos);
+
+		for (int i = 0; i < 2; i++) {
+
+			if (tempPos.frontObject != -1 && objectCollection.at(tempPos.frontObject).color != Wall &&
+				objectCollection.at(tempPos.frontObject).color != Boss && objectCollection.at(tempPos.frontObject).color != Objective &&
+				objectCollection.at(tempPos.frontObject).color != EnemySpawner)
+				objectIDRange.push_back(tempPos.frontObject);
+
+			tempPos.facing = { i == 0 , i == 1, false, false };
+		
+			// adding either north or south from current tile times range.
+			for (int j = 0; j < range; j++) {
+
+				if (i) tempPos.x -= 10 * j;
+				else tempPos.x += 10 * j;
+
+				checkForInteraction(tempPos);
+
+				if (tempPos.frontObject != -1 && objectCollection.at(tempPos.frontObject).color != Wall &&
+					objectCollection.at(tempPos.frontObject).color != Boss && objectCollection.at(tempPos.frontObject).color != Objective &&
+					objectCollection.at(tempPos.frontObject).color != EnemySpawner)
+					objectIDRange.push_back(tempPos.frontObject);
+
+				tempPos.x = entity.getRawCoords().x;
+			}
+
+
+		}
+
+		tempPos.z += 10;
+
+	}
+	*/
+
+	tempPos.moveBackward();
+
+	for (int i = 0; i <= range; i++) {
+
+		// add the current tile.
+		checkForInteraction(tempPos);
+
+		if (tempPos.frontObject != -1)
+			objectIDRange.push_back(tempPos.frontObject);
+
+		tempPos.moveForward();
+
+		//// count * range + 1 for cone of vision
+		//for (int j = i * range + 1; j > 0; j++) {
+
+
+
+		//}
+
+	}
+
+	if (!objectIDRange.empty()) entity.rangeIDCol = objectIDRange;
+
+	// print out the thingy if period is pressed.
+	if (lastKey == 46) {
+		for (int i : objectIDRange)
+		{
+			std::cout << i << std::endl;
+		}
+		lastKey = 0;
+	}
+
+	return rr;
+	
 }
 
 void enemyModel(ShibaObject a) {
@@ -1644,7 +1978,8 @@ void enemyModel(ShibaObject a) {
 	center = a.vertexCol.at(0);
 
 	//	For now rendering a white plane as enemy. Apply texture over it later.
-	if (a.health == 0) glColor3f(1, 0, 0);
+	if (a.health <= 10) glColor3f(1, 0, 0);
+	else if (a.health <= 50) glColor3f(1, 1, 0);
 	else glColor3f(1, 1, 1);
 
 	glPushMatrix();
@@ -1667,6 +2002,38 @@ void enemyModel(ShibaObject a) {
 		glEnd();
 
 	glPopMatrix();
+
+	// drawing range of enemies
+	if (!a.rangeIDCol.empty()) {
+
+
+		for (int i : a.rangeIDCol) {
+
+			// checking if player is within range.
+			if (objectCollection.at(i).tileX == cameraPosition.toTile().x && objectCollection.at(i).tileZ == cameraPosition.toTile().z) {
+				glColor3f(1, 0, 0);
+				int res = animateTex(EnemySpawner, 120);
+				if (res == 1) player.health -= 1;
+			}
+			else {
+				glColor3f(0, 1, 0);
+			}
+
+			glPushMatrix();
+				
+				
+				glTranslatef(objectCollection.at(i).tileX * 10, GROUNDLEVEL, objectCollection.at(i).tileZ * 10);
+				
+				glPushMatrix();
+						glScalef(1, 0.01, 1);
+						glutSolidCube(TILESIZE * 2);
+				glPopMatrix();
+
+
+			glPopMatrix();
+		}
+
+	}
 
 
 }

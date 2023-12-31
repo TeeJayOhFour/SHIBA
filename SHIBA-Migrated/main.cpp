@@ -1,7 +1,6 @@
 
 //including IO stream or stdlib not required as it's in engine.hpp already.
 #include "SHIBA.h"
-#include "zaki.cpp"
 
 using namespace std;
 
@@ -15,7 +14,13 @@ static void drawHuman(ShibaObject a) {
     //// Draw the head
     glColor3f(1.0, 0.8, 0.6); // Skin color
 
+    glPushMatrix();
+        glTranslatef(
+            center.x + a.offset.x,
+            center.y + a.offset.y,
+            center.z + a.offset.z);
     glutSolidSphere(0.25, 100, 100);
+    glPopMatrix();
 
     // Draw the body
     glColor3f(0.5, 0.5, 1.0); // Blue shirt
@@ -34,7 +39,8 @@ static void drawHuman(ShibaObject a) {
         glTranslatef(
             center.x + a.offset.x + 0.5f,
             center.y + a.offset.y - 0.3f,
-            center.z + a.offset.z);
+            center.z + a.offset.z
+        );
     glutSolidCube(0.1);
     glPopMatrix();
 
@@ -68,7 +74,6 @@ static void drawHuman(ShibaObject a) {
 
 int main(int argc, char** argv) {
 
-   
     int L3Map[20][20] = {
         {8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 4, 4, 4, 4, 4},
         {4, 4, 4, 4, 4, 4, 4, 0, 0, 4, 4, 4, 0, 0, 4, 0, 0, 0, 1, 4},
@@ -165,9 +170,10 @@ int main(int argc, char** argv) {
     // 1. Level class queue (queue each level)
     queue<Level> LevelQueue;
 
-    Level meow1 = Level("Level 1", L5Map);
-    Level meow2 = Level("Level 2", L2Map);
-    Level meow3 = Level("Level 3", L3Map);
+    Level meow1 = Level("Level 0", L5Map);
+    Level meow2 = Level("Level 1", L1Map);
+    Level meow3 = Level("Level 2", L2Map);
+    Level meow4 = Level("Level 3", L3Map);
 
 
     //! TODO Allow shibaobject to handle glutsolids
@@ -183,6 +189,7 @@ int main(int argc, char** argv) {
     LevelQueue.push(meow1);
     LevelQueue.push(meow2);
     LevelQueue.push(meow3);
+    LevelQueue.push(meow4);
 
     // 2. Pathfinding callback function (for deciding next tile)
     // 3. Enemy Prioritization callback function (for targetting closest threat)
