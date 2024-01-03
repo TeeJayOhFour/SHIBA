@@ -2069,6 +2069,7 @@ std::queue<ShibaQuad> aStarImplementation(ShibaObject& entity, Position& goal, i
 					lowestCostID = id;
 				}
 				
+				std::cout <<  "Meow" << std::endl;
 			}
 
 		}
@@ -2084,7 +2085,7 @@ std::queue<ShibaQuad> aStarImplementation(ShibaObject& entity, Position& goal, i
 			backtrack = true;
 			std::cout << "Backtracking.." << std::endl;
 
-			if (!pathStack.empty()) {
+			if (!pathStack.empty())
 				switch (pathStack.back().direction) {
 
 					case UP: txt = "NORTH"; break;
@@ -2094,17 +2095,8 @@ std::queue<ShibaQuad> aStarImplementation(ShibaObject& entity, Position& goal, i
 
 				}
 
-				trace.facing = {
-					pathStack.back().direction == UP,
-					pathStack.back().direction == DOWN,
-					pathStack.back().direction == RIGHT,
-					pathStack.back().direction == LEFT,
-				};
-
-			}
-
-
-		} else {
+		}
+		else {
 			switch (pathMap.at(lowestCostID).direction) {
 
 				case UP: txt = "NORTH"; break;
@@ -2115,22 +2107,24 @@ std::queue<ShibaQuad> aStarImplementation(ShibaObject& entity, Position& goal, i
 			}
 
 			std::cout << "going " << txt << " Cost:" << pathMap.at(lowestCostID).cost << " Object Name: " << objectCollection.at(trace.frontObject).objectName << std::endl;
-			trace.facing = {
-				pathMap.at(lowestCostID).direction == UP,
-				pathMap.at(lowestCostID).direction == DOWN,
-				pathMap.at(lowestCostID).direction == RIGHT,
-				pathMap.at(lowestCostID).direction == LEFT,
-			};
+
 		}
 
 
+		trace.facing = { 
+			pathMap.at(lowestCostID).direction == UP, 
+			pathMap.at(lowestCostID).direction == DOWN, 
+			pathMap.at(lowestCostID).direction == RIGHT, 
+			pathMap.at(lowestCostID).direction == LEFT, 
+		};
 
 		// Move in the direction it's facing.
+		
 		if (backtrack) { 
 
 			trace.moveBackward(); 
 			// removing last path tile if it was a backtrack.
-			if (backtrack && !pathStack.empty()) pathStack.pop_back();
+			if (backtrack && lowestCostID.empty() && !pathStack.empty()) pathStack.pop_back();
 
 		}
 		else { 
@@ -2141,6 +2135,7 @@ std::queue<ShibaQuad> aStarImplementation(ShibaObject& entity, Position& goal, i
 			pathStack.push_back(pathMap.at(lowestCostID));
 		
 		}
+		
 		
 		// checking if we arrived at the destination
 		if (!pathStack.empty() && pathStack.back().cost == 0) {
@@ -2170,12 +2165,13 @@ std::queue<ShibaQuad> aStarImplementation(ShibaObject& entity, Position& goal, i
 		std::cout << "Already reached goal. Trace skipped" << std::endl;
 	else if (iterations == 12)
 		std::cout << "Player out of range for detection." << std::endl;
-	else {
-		// found a path to goal.
-		for (Path i : pathStack) pathID.push_back(i.objectID);
-
-	}
 	
+
+
+
+	for (Path i : pathStack) pathID.push_back(i.objectID);
+	
+
 	if (!pathID.empty()) entity.pathIDCol = pathID;
 
 	return finalQueue;
@@ -2217,17 +2213,6 @@ void enemyModel(ShibaObject a) {
 
 	glPopMatrix();
 
-	// making an indicator for enemy.
-	glColor3f(1, 0, 0);
-	glPushMatrix();
-		glTranslatef(
-			center.x + a.offset.x,
-			WALLSIZE + 0.5f,
-			center.z + a.offset.z
-		);
-		glutSolidCube(TILESIZE);
-	glPopMatrix();
-
 	// drawing range of enemies
 	if (!a.rangeIDCol.empty()) for (int i : a.rangeIDCol) {
 
@@ -2241,13 +2226,11 @@ void enemyModel(ShibaObject a) {
 				glColor3f(0, 1, 0);
 			}
 
-
 			glPushMatrix();
 				
 				
 				glTranslatef(objectCollection.at(i).tileX * 10, GROUNDLEVEL, objectCollection.at(i).tileZ * 10);
 				
-
 				glPushMatrix();
 						glScalef(1, 0.01, 1);
 						glutSolidCube(TILESIZE * 2);
@@ -2260,10 +2243,10 @@ void enemyModel(ShibaObject a) {
 	// drawing path enemy will is going to take.
 	if (!a.pathIDCol.empty()) for (int i : a.pathIDCol) {
 
-		glColor3f(0, 0, .5);
+		glColor3f(0, 0, 1);
 		glPushMatrix();
 
-		glTranslatef(objectCollection.at(i).tileX * 10, WALLSIZE + 0.01f, objectCollection.at(i).tileZ * 10);
+		glTranslatef(objectCollection.at(i).tileX * 10, 5.0f, objectCollection.at(i).tileZ * 10);
 
 			glPushMatrix();
 				glScalef(1, 0.01, 1);

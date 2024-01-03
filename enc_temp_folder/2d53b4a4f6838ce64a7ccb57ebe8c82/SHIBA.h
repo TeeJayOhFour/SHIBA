@@ -74,7 +74,7 @@ void handleOptionInteraction(std::string option, int value);
 void handleMainMenuInteraction(std::string option, int value);
 void listenForMouseClick(int button, int state, int x, int y);
 void listenForNormalKeysRelease(unsigned char key, int x, int y);
-std::queue<ShibaQuad> aStarImplementation(ShibaObject& entity, Position& goal, int range);
+std::queue<ShibaQuad> aStarImplementation(ShibaObject& start, Position& goal, int range);
 void renderText(float x, float y, int r, int g, int b, const char* string);
 
 
@@ -1981,6 +1981,7 @@ std::queue<ShibaQuad> aStarImplementation(ShibaObject& entity, Position& goal, i
 
 
 	// Path tracing starts from here.
+
 	tempPos = entity.getRawCoords();
 	tempPos.facing = { false, false, false, false };
 	checkForInteraction(tempPos);
@@ -1998,16 +1999,19 @@ std::queue<ShibaQuad> aStarImplementation(ShibaObject& entity, Position& goal, i
 
 	//adding the current position as the SOURCE tile.
 	Path source = {
-		std::to_string(objectCollection.at(trace.frontObject).tileX) + std::to_string(objectCollection.at(trace.frontObject).tileZ),	//ID
+		objectCollection.at(trace.frontObject).objectName,	//ID
 		abs(trace.toTile().x - goal.toTile().x) + abs(trace.toTile().z - goal.toTile().z)	// Cost = current - goal
 		- 1, //direction
 		true,	//visited = true
 		trace.frontObject
 	};
 
-	pathMap.insert_or_assign(source.id, source);
+	//checking cost is 0, which means the target has reached goal.
 
-	bool samePos = trace.toTile().x == goal.toTile().x && trace.toTile().z == goal.toTile().z;
+
+	pathMap.insert_or_assign(source.id, source);
+	// heuristics increases as number of steps needed does.
+
 	// recursively add paths to the map as the enemy explores the tiles.
 	// termination condition: If all of the paths are visited and we're back in the source. There is no path to goal.
 	// loop runs indefinite number of times. Will only terminate once num of visited tiles == size of map.
@@ -2016,7 +2020,7 @@ std::queue<ShibaQuad> aStarImplementation(ShibaObject& entity, Position& goal, i
 	int iterations = 0;
 
 	// limiting to 12 steps because why not
-	while (iterations < 12 && source.cost != 0 && !samePos) {
+	while (iterations < 12 && source.cost != 0) {
 
 		int lowestCost = -1;
 		std::string lowestCostID;
@@ -2047,7 +2051,7 @@ std::queue<ShibaQuad> aStarImplementation(ShibaObject& entity, Position& goal, i
 				int diffX = objectCollection.at(trace.frontObject).tileX - goal.toTile().x;
 				int diffZ = objectCollection.at(trace.frontObject).tileZ - goal.toTile().z;
 
-				std::string id = std::to_string(objectCollection.at(trace.frontObject).tileX) + std::to_string(objectCollection.at(trace.frontObject).tileZ);
+				std::string id = objectCollection.at(trace.frontObject).objectName;
 
 				int direction = trace.facing.toDirection();
 				int cost;
@@ -2058,6 +2062,7 @@ std::queue<ShibaQuad> aStarImplementation(ShibaObject& entity, Position& goal, i
 				Path p = { id, cost, direction, false, trace.frontObject };
 
 				//std::cout << trace.frontObject << " : " << " Cost: " << cost << " Direction: " << direction << std::endl;
+				//std::cout <<  "dX" << ":" << "dZ: " << diffX << " : " << diffZ << std::endl;
 
 				// finally adding as a path for selection if it doesn't exist already.
 				if (pathMap.count(id) == 0) pathMap.insert_or_assign(id, p);
@@ -2077,70 +2082,44 @@ std::queue<ShibaQuad> aStarImplementation(ShibaObject& entity, Position& goal, i
 		//std::cout << "Lowest Cost ID: " << lowestCostID << std::endl;
 
 		bool backtrack = false;
+
+		if (lowestCostID.empty()) backtrack = true;
+			
 		// backtracking to previous tile by reversing the direction travelled.
 		std::string txt;
+		switch (pathMap.at(lowestCostID).direction) {
 
-		if (lowestCostID.empty()) {
-			backtrack = true;
-			std::cout << "Backtracking.." << std::endl;
+			case UP: txt = "NORTH"; break;
+			case DOWN: txt = "SOUTH"; break;
+			case LEFT: txt = "WEST"; break;
+			case RIGHT: txt = "EAST"; break;
 
-			if (!pathStack.empty()) {
-				switch (pathStack.back().direction) {
-
-					case UP: txt = "NORTH"; break;
-					case DOWN: txt = "SOUTH"; break;
-					case LEFT: txt = "WEST"; break;
-					case RIGHT: txt = "EAST"; break;
-
-				}
-
-				trace.facing = {
-					pathStack.back().direction == UP,
-					pathStack.back().direction == DOWN,
-					pathStack.back().direction == RIGHT,
-					pathStack.back().direction == LEFT,
-				};
-
-			}
-
-
-		} else {
-			switch (pathMap.at(lowestCostID).direction) {
-
-				case UP: txt = "NORTH"; break;
-				case DOWN: txt = "SOUTH"; break;
-				case LEFT: txt = "WEST"; break;
-				case RIGHT: txt = "EAST"; break;
-
-			}
-
-			std::cout << "going " << txt << " Cost:" << pathMap.at(lowestCostID).cost << " Object Name: " << objectCollection.at(trace.frontObject).objectName << std::endl;
-			trace.facing = {
-				pathMap.at(lowestCostID).direction == UP,
-				pathMap.at(lowestCostID).direction == DOWN,
-				pathMap.at(lowestCostID).direction == RIGHT,
-				pathMap.at(lowestCostID).direction == LEFT,
-			};
 		}
 
+		std::cout << "going " << txt << " Cost:" << pathMap.at(lowestCostID).cost << " Object Name: " << objectCollection.at(trace.frontObject).objectName << std::endl;
 
+		trace.facing = { 
+			pathMap.at(lowestCostID).direction == UP, 
+			pathMap.at(lowestCostID).direction == DOWN, 
+			pathMap.at(lowestCostID).direction == RIGHT, 
+			pathMap.at(lowestCostID).direction == LEFT, 
+		};
 
 		// Move in the direction it's facing.
-		if (backtrack) { 
-
-			trace.moveBackward(); 
-			// removing last path tile if it was a backtrack.
-			if (backtrack && !pathStack.empty()) pathStack.pop_back();
-
-		}
-		else { 
-
-			trace.moveForward(); 
-			// marking as visited
-			pathMap.at(lowestCostID).visited = true;
-			pathStack.push_back(pathMap.at(lowestCostID));
 		
+		if (backtrack) {
+			trace.moveBackward();
+			std::cout << "Backtracking.." << std::endl;
 		}
+		else trace.moveForward();
+		
+		// marking as visited
+		pathMap.at(lowestCostID).visited = true;
+		pathStack.push_back(pathMap.at(lowestCostID));
+
+		// removing last path tile if it was a backtrack.
+		if (backtrack && lowestCostID.empty()) pathStack.pop_back();
+		
 		
 		// checking if we arrived at the destination
 		if (!pathStack.empty() && pathStack.back().cost == 0) {
@@ -2165,17 +2144,14 @@ std::queue<ShibaQuad> aStarImplementation(ShibaObject& entity, Position& goal, i
 	}
 
 	std::cout << "Path trace complete." << std::endl;
-
-	if (iterations == 0)
-		std::cout << "Already reached goal. Trace skipped" << std::endl;
-	else if (iterations == 12)
+	if (iterations == 12)
 		std::cout << "Player out of range for detection." << std::endl;
-	else {
-		// found a path to goal.
-		for (Path i : pathStack) pathID.push_back(i.objectID);
+	else if (iterations == 0)
+		std::cout << "Already reached goal" << std::endl;
 
-	}
+	for (Path i : pathStack) pathID.push_back(i.objectID);
 	
+
 	if (!pathID.empty()) entity.pathIDCol = pathID;
 
 	return finalQueue;
@@ -2217,17 +2193,6 @@ void enemyModel(ShibaObject a) {
 
 	glPopMatrix();
 
-	// making an indicator for enemy.
-	glColor3f(1, 0, 0);
-	glPushMatrix();
-		glTranslatef(
-			center.x + a.offset.x,
-			WALLSIZE + 0.5f,
-			center.z + a.offset.z
-		);
-		glutSolidCube(TILESIZE);
-	glPopMatrix();
-
 	// drawing range of enemies
 	if (!a.rangeIDCol.empty()) for (int i : a.rangeIDCol) {
 
@@ -2241,13 +2206,11 @@ void enemyModel(ShibaObject a) {
 				glColor3f(0, 1, 0);
 			}
 
-
 			glPushMatrix();
 				
 				
 				glTranslatef(objectCollection.at(i).tileX * 10, GROUNDLEVEL, objectCollection.at(i).tileZ * 10);
 				
-
 				glPushMatrix();
 						glScalef(1, 0.01, 1);
 						glutSolidCube(TILESIZE * 2);
@@ -2260,10 +2223,10 @@ void enemyModel(ShibaObject a) {
 	// drawing path enemy will is going to take.
 	if (!a.pathIDCol.empty()) for (int i : a.pathIDCol) {
 
-		glColor3f(0, 0, .5);
+		glColor3f(0, 0, 1);
 		glPushMatrix();
 
-		glTranslatef(objectCollection.at(i).tileX * 10, WALLSIZE + 0.01f, objectCollection.at(i).tileZ * 10);
+		glTranslatef(objectCollection.at(i).tileX * 10, 5.0f, objectCollection.at(i).tileZ * 10);
 
 			glPushMatrix();
 				glScalef(1, 0.01, 1);

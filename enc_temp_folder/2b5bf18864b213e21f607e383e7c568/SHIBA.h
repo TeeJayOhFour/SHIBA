@@ -2217,17 +2217,6 @@ void enemyModel(ShibaObject a) {
 
 	glPopMatrix();
 
-	// making an indicator for enemy.
-	glColor3f(1, 0, 0);
-	glPushMatrix();
-		glTranslatef(
-			center.x + a.offset.x,
-			WALLSIZE + 0.5f,
-			center.z + a.offset.z
-		);
-		glutSolidCube(TILESIZE);
-	glPopMatrix();
-
 	// drawing range of enemies
 	if (!a.rangeIDCol.empty()) for (int i : a.rangeIDCol) {
 
@@ -2241,13 +2230,11 @@ void enemyModel(ShibaObject a) {
 				glColor3f(0, 1, 0);
 			}
 
-
 			glPushMatrix();
 				
 				
 				glTranslatef(objectCollection.at(i).tileX * 10, GROUNDLEVEL, objectCollection.at(i).tileZ * 10);
 				
-
 				glPushMatrix();
 						glScalef(1, 0.01, 1);
 						glutSolidCube(TILESIZE * 2);
@@ -2260,10 +2247,10 @@ void enemyModel(ShibaObject a) {
 	// drawing path enemy will is going to take.
 	if (!a.pathIDCol.empty()) for (int i : a.pathIDCol) {
 
-		glColor3f(0, 0, .5);
+		glColor3f(0, 0, 1);
 		glPushMatrix();
 
-		glTranslatef(objectCollection.at(i).tileX * 10, WALLSIZE + 0.01f, objectCollection.at(i).tileZ * 10);
+		glTranslatef(objectCollection.at(i).tileX * 10, WALLSIZE + 1.0f, objectCollection.at(i).tileZ * 10);
 
 			glPushMatrix();
 				glScalef(1, 0.01, 1);

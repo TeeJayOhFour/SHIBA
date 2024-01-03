@@ -26,7 +26,17 @@ enum Directions {
 	RIGHT = 3
 };
 
-// north, south, east, west. All false by default
+struct Path {
+
+	std::string id;
+	int cost;
+	int direction;
+	bool visited = false;
+	int objectID = -1;
+
+};
+
+
 struct Poles {
 	bool north = false, south = false, east = false, west = false;
 
@@ -35,6 +45,16 @@ struct Poles {
 		std::cout << " S: " << south;
 		std::cout << " E: " << east;
 		std::cout << " W: " << west << std::endl;
+	}
+
+	//	returns UP/DOWN/LEFT or RIGHT depending on where the entity is facing.
+	int toDirection() const {
+
+		if (north) return UP;
+		else if (south) return DOWN;
+		else if (east) return RIGHT;
+		else if (west) return LEFT;
+
 	}
 };
 
@@ -51,6 +71,8 @@ struct Position {
 	int button = -1;
 	int buttonState = -1;
 	int frontObject = -1;
+
+	// north, south, east, west. All false by default
 	Poles facing;
 
 	bool operator == (const Position& a) {
@@ -309,6 +331,8 @@ public:
 	std::vector <ShibaQuad> vertexCol;
 	std::vector <ShibaQuad> texturePoints;
 	std::vector <int> rangeIDCol;
+	std::vector <int> pathIDCol;
+
 	int health = 100;
 
 	bool loopPath = false;

@@ -2170,12 +2170,13 @@ std::queue<ShibaQuad> aStarImplementation(ShibaObject& entity, Position& goal, i
 		std::cout << "Already reached goal. Trace skipped" << std::endl;
 	else if (iterations == 12)
 		std::cout << "Player out of range for detection." << std::endl;
-	else {
-		// found a path to goal.
-		for (Path i : pathStack) pathID.push_back(i.objectID);
-
-	}
 	
+
+
+
+	for (Path i : pathStack) pathID.push_back(i.objectID);
+	
+
 	if (!pathID.empty()) entity.pathIDCol = pathID;
 
 	return finalQueue;
@@ -2217,17 +2218,6 @@ void enemyModel(ShibaObject a) {
 
 	glPopMatrix();
 
-	// making an indicator for enemy.
-	glColor3f(1, 0, 0);
-	glPushMatrix();
-		glTranslatef(
-			center.x + a.offset.x,
-			WALLSIZE + 0.5f,
-			center.z + a.offset.z
-		);
-		glutSolidCube(TILESIZE);
-	glPopMatrix();
-
 	// drawing range of enemies
 	if (!a.rangeIDCol.empty()) for (int i : a.rangeIDCol) {
 
@@ -2241,13 +2231,11 @@ void enemyModel(ShibaObject a) {
 				glColor3f(0, 1, 0);
 			}
 
-
 			glPushMatrix();
 				
 				
 				glTranslatef(objectCollection.at(i).tileX * 10, GROUNDLEVEL, objectCollection.at(i).tileZ * 10);
 				
-
 				glPushMatrix();
 						glScalef(1, 0.01, 1);
 						glutSolidCube(TILESIZE * 2);
@@ -2260,10 +2248,10 @@ void enemyModel(ShibaObject a) {
 	// drawing path enemy will is going to take.
 	if (!a.pathIDCol.empty()) for (int i : a.pathIDCol) {
 
-		glColor3f(0, 0, .5);
+		glColor3f(0, 0, 1);
 		glPushMatrix();
 
-		glTranslatef(objectCollection.at(i).tileX * 10, WALLSIZE + 0.01f, objectCollection.at(i).tileZ * 10);
+		glTranslatef(objectCollection.at(i).tileX * 10, WALLSIZE + 1.0f, objectCollection.at(i).tileZ * 10);
 
 			glPushMatrix();
 				glScalef(1, 0.01, 1);

@@ -72,7 +72,133 @@ static void drawHuman(ShibaObject a) {
 
 }
 
+static void drawRocket(ShibaObject a) {
+
+    // Rocket body
+    glColor3f(0.694, 0.694, 0.686);
+    glPushMatrix();
+    glTranslated(7.5, -18, -120);
+    glRotated(-90, 1, 0, 0);
+    glutSolidCylinder(4.5, 30, 32, 32);
+    glPopMatrix();
+
+    // Rocket bottom
+    glColor3f(0.564, 0.541, 0.517);
+    glPushMatrix();
+    glTranslated(7.5, -18, -120);
+    glRotated(-90, 1, 0, 0);
+    glutSolidSphere(4.5, 32, 32);
+    glPopMatrix();
+
+    // Rocket plates
+    glColor3f(0.427, 0.180, 0.094);
+
+    glPushMatrix();
+    glTranslated(7.5, -15.5, -120);
+    glRotatef(45, 0, 1, 0);
+    glRotatef(160, 1, 0, 0);
+    glutSolidTorus(1, 8, 10, 5);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslated(7.5, -15.5, -120);
+    glRotatef(160, 1, 0, 0);
+    glRotatef(-90, 0, 1, 0);
+    glutSolidTorus(1, 8, 10, 5);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslated(7.5, -15.5, -120);
+    glRotatef(225, 0, 1, 0);
+    glRotatef(160, 1, 0, 0);
+    glutSolidTorus(1, 8, 10, 5);
+    glPopMatrix();
+
+}
+
+static void Batman(ShibaObject a) {
+
+
+    // Cowl
+    glColor3f(1, 0, 0);
+    glPushMatrix();
+    glTranslatef(0.0, 0.0, 0.0);
+    glutSolidCube(0.4);
+    glPopMatrix();
+
+    // Suit
+    glColor3f(0, 1, 0);
+    glPushMatrix();
+    glTranslatef(0.0, -0.4, 0.0);
+    glutSolidCube(0.5);
+    glPopMatrix();
+
+    // arms
+    glColor3f(0.4, 0, 0);
+    glPushMatrix();
+    glTranslatef(0.3, -0.2, 0.0);
+    glutSolidCube(0.2);
+    glPopMatrix();
+    glColor3f(0.4, 0, 0);
+    glPushMatrix();
+    glTranslatef(0.34, -0.3, 0.0);
+    glutSolidCube(0.12);
+    glPopMatrix();
+    glColor3f(0.4, 0, 0);
+    glPushMatrix();
+    glTranslatef(0.34, -0.4, 0.0);
+    glutSolidCube(0.12);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslatef(-0.3, -0.2, 0.0);
+    glutSolidCube(0.2);
+    glPopMatrix();
+    glColor3f(0.4, 0, 0);
+    glPushMatrix();
+    glTranslatef(-0.34, -0.3, 0.0);
+    glutSolidCube(0.12);
+    glPopMatrix();
+    glColor3f(0.4, 0, 0);
+    glPushMatrix();
+    glTranslatef(-0.34, -0.4, 0.0);
+    glutSolidCube(0.12);
+    glPopMatrix();
+
+    // pants
+    glColor3f(0.0, 0.0, 1.0);
+    glPushMatrix();
+    glTranslatef(0.1, -0.7, 0.0);
+    glutSolidCube(0.15);
+    glPopMatrix();
+    glColor3f(0.0, 0.0, 1.0);
+    glPushMatrix();
+    glTranslatef(0.1, -0.8, 0.0);
+    glutSolidCube(0.15);
+    glPopMatrix();
+    glColor3f(0.0, 0.0, 1.0);
+    glPushMatrix();
+    glTranslatef(0.1, -0.9, 0.0);
+    glutSolidCube(0.15);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslatef(-0.1, -0.7, 0.0);
+    glutSolidCube(0.15);
+    glPopMatrix();
+    glPushMatrix();
+    glTranslatef(-0.1, -0.8, 0.0);
+    glutSolidCube(0.15);
+    glPopMatrix();
+    glPushMatrix();
+    glTranslatef(-0.1, -0.9, 0.0);
+    glutSolidCube(0.15);
+    glPopMatrix();
+
+}
+
 int main(int argc, char** argv) {
+
 
     int L3Map[20][20] = {
         {8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 4, 4, 4, 4, 4},
@@ -178,7 +304,7 @@ int main(int argc, char** argv) {
 
     //! TODO Allow shibaobject to handle glutsolids
     ShibaObject zaki(0, 0, 0);
-    zaki.setLoadGlutFunction(drawHuman);
+    zaki.setLoadGlutFunction(Batman);
      meow1.customObjects.push_back(zaki);
 
     // batman.setLoadGlutFunction(&kyakya);
