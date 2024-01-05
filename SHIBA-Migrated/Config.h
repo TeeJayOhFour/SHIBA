@@ -14,8 +14,9 @@
 #include <iostream>
 #include <irrKlang.h>
 #include <iomanip>
+#include <SOIL2.h>
 
-#define TITLE "SHIBA Engine v1.7 by TJ | Copyright 2023"
+#define TITLE "SHIBA Engine v1.8 by TJ | Copyright 2023"
 // Stupidly Horrendous Implementation of Basic Animations
 
 
@@ -28,7 +29,7 @@ constexpr auto SENSITIVITY_LOW = 50.0f;
 constexpr auto FPS = 60;
 
 constexpr auto TILESIZE = 5.0f;	//should be 5
-constexpr auto WALLSIZE = 20.0f;	//should be 20
+constexpr auto WALLSIZE = 30.0f;	//should be 20
 constexpr auto GROUNDLEVEL = -5.0f;
 constexpr auto TO_RADIANS = 3.141592 / 180.0;
 constexpr auto ANIMATIONSTEP = 10.0f;		//Higher value is slower/smoother;
@@ -42,8 +43,7 @@ constexpr auto HEIGHT = 9*80;
 constexpr auto PLAYER_DAMAGE = 90;
 constexpr auto BULLET_PIERCING = false;
 
-constexpr auto RANGED_ENEMY_DETECTION_RANGE = 2;
-constexpr auto MELEE_ENEMY_DETECTION_RANGE = 1;
+constexpr auto RANGED_ENEMY_DETECTION_RANGE = 1;
 
 
 static float mouseSpeed = SENSITIVITY_MID;
@@ -79,21 +79,34 @@ static void toggleOverlayMode(bool toggle) {
 
 	if (toggle) {
 		glDisable(GL_LIGHTING);
-		glDisable(GL_BLEND);
+
+		//glMatrixMode(GL_PROJECTION);
+		//glPushMatrix();
+		//glLoadIdentity();
+		//gluOrtho2D(0, glutGet(GLUT_WINDOW_WIDTH), 0, glutGet(GLUT_WINDOW_HEIGHT));
+
 		glMatrixMode(GL_PROJECTION);
 		glPushMatrix();
 		glLoadIdentity();
 		gluOrtho2D(0, glutGet(GLUT_WINDOW_WIDTH), 0, glutGet(GLUT_WINDOW_HEIGHT));
+		glMatrixMode(GL_MODELVIEW);
+		glPushMatrix();
+		glLoadIdentity();
 	}
 	else {
 		// Disable blending after rendering
+
+		//glMatrixMode(GL_PROJECTION);
+		//glPopMatrix();
+
+		glMatrixMode(GL_MODELVIEW);
+		glPopMatrix();
 
 		glMatrixMode(GL_PROJECTION);
 		glPopMatrix();
 
 		glMatrixMode(GL_MODELVIEW);
 		glEnable(GL_LIGHTING);
-		glEnable(GL_BLEND);
 
 	}
 
@@ -108,25 +121,14 @@ static void toggleTransparency(bool toggle) {
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-		glMatrixMode(GL_PROJECTION);
-		glPushMatrix();
-		glLoadIdentity();
-		gluOrtho2D(0, glutGet(GLUT_WINDOW_WIDTH), 0, glutGet(GLUT_WINDOW_HEIGHT));
 
-		glMatrixMode(GL_MODELVIEW);
-		glPushMatrix();
-		glLoadIdentity();
 
 	}
 	else {
 		// Disable blending after rendering
 		glDisable(GL_BLEND);
 
-		glMatrixMode(GL_PROJECTION);
-		glPopMatrix();
 
-		glMatrixMode(GL_MODELVIEW);
-		glPopMatrix();
 	}
 
 }

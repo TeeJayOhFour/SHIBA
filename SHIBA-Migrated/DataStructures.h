@@ -1,6 +1,27 @@
 #pragma once
 #include "Config.h"
 
+struct Motion {
+	bool Forward, Backward, Left, Right;
+
+	bool isMoving() const {
+		return (this->Forward || this->Backward || this->Left || this->Right);
+	}
+
+};
+
+
+enum AnimID {
+	// Enemy texture ids
+	ENEMY_IDLE_STATE_0 = 100,
+	ENEMY_IDLE_STATE_1 = 101,
+	ENEMY_IDLE_STATE_2 = 102,
+	ENEMY_IDLE_STATE_3 = 103,
+	ENEMY_IDLE_STATE_4 = 104,
+	ENEMY_IDLE_STATE_5 = 105,
+
+};
+
 enum tileID {
 	Enemy = -5,
 	Player = -4,
@@ -35,7 +56,6 @@ struct Path {
 	int objectID = -1;
 
 };
-
 
 struct Poles {
 	bool north = false, south = false, east = false, west = false;
@@ -74,6 +94,7 @@ struct Position {
 
 	// north, south, east, west. All false by default
 	Poles facing;
+	Motion motion = { false,false,false,false };
 
 	bool operator == (const Position& a) {
 		if (x == a.x && y == a.y &&
@@ -279,9 +300,6 @@ struct ShibaQuad {
 
 };
 
-struct Motion {
-	bool Forward, Backward, Left, Right;
-};
 
 //This function is needed by ShibaObject, so declaring it first.
 static void getColorMod(int id) {
@@ -324,18 +342,24 @@ static void getColorMod(int id) {
 class ShibaObject {
 
 public:
+
 	// Tile coordinates
 	std::string objectName;
 	Position offset;
 	bool texture = false;
+
 	std::vector <ShibaQuad> vertexCol;
 	std::vector <ShibaQuad> texturePoints;
 	std::vector <int> rangeIDCol;
 	std::vector <int> pathIDCol;
 
+
 	int health = 100;
 
 	bool loopPath = false;
+	int state = -1;
+	int currentState = 0;
+
 	std::queue <ShibaQuad> pathing;
 
 	using loadFunction = void (*)(ShibaObject);
@@ -367,6 +391,23 @@ public:
 		else {
 			// std::cout << "This 3D object doesn't have any custom Glut Solids or it wasn't assigned." << std::endl;
 		}
+	}
+
+	void cycleState() {
+
+		if (state == -1) {
+			std::cout << "Error: Cycle State called when no state was declared." << std::endl;
+			return;
+		}
+		if (currentState == state) currentState = 0;
+		else currentState++;
+
+		std::cout << "State is now: " << currentState << "/" << state << std::endl;
+
+	}
+
+	int getState() {
+		return currentState;
 	}
 
 	void load() {

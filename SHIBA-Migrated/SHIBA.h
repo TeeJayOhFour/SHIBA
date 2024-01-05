@@ -5,7 +5,6 @@
 
 // Globals
 //Player navigation info
-Motion motion = { false, false, false, false };
 
 struct Position crosshair;
 std::queue <Level> levelQueue;
@@ -15,9 +14,8 @@ Position cameraPosition;	//camera cords
 
 Entity player(cameraPosition);	//incorporate this throughout the whole code. remove cameraPostion
 
-
-
 //? OR just add convert the camera into a ShibaObject.
+int enemyStates = 1;
 
 Position levelBounds;
 std::vector <Position> possibleSpawns;
@@ -33,12 +31,10 @@ std::unordered_map <std::string, ShibaObject> enemyCollection;
 std::unordered_map <std::string, ShibaObject> bulletMap;
 
 bool levelSpawning = false;
-
 bool playerInCombat = false;
 
 irrklang::ISound* combatMusic = soundEngine->play2D(BATTLE_MUSIC_0, false, true, true);
 
-//!TODO YOU CAN't INTERACT WITH ENEMY SPAWNERS FOR WHATEVER REASON. CHECK INTERACTION FUNCTION IS NOT THE ISSUE
 
 // Prototypes
 void menu();
@@ -47,7 +43,6 @@ void camera();
 void lighting();
 void devScreen();
 void updateHUD();
-void showSplash(int splash);
 void spawnPlayer();
 void renderScene();
 void idleLoop(int);
@@ -56,6 +51,7 @@ void enemyPathing();
 void bulletPhysics();
 void renderWorldBox();
 void renderGameElements();
+void showSplash(int splash);
 void shoot(Position entity);
 void playQueuedAnimations();
 void addSpawns(int x, int z);
@@ -74,7 +70,7 @@ void handleOptionInteraction(std::string option, int value);
 void handleMainMenuInteraction(std::string option, int value);
 void listenForMouseClick(int button, int state, int x, int y);
 void listenForNormalKeysRelease(unsigned char key, int x, int y);
-std::queue<ShibaQuad> aStarImplementation(ShibaObject& entity, Position& goal, int range);
+std::queue<ShibaQuad> aStarImplementation(ShibaObject& entity, Position goal, int range);
 void renderText(float x, float y, int r, int g, int b, const char* string);
 
 
@@ -130,37 +126,52 @@ void initMenu() {
 void initTextures() {
 
 	// Loading essential game textures manually.
+	GLuint image;
 
 	// Get the directory of the current source file
-
-	// Adding ID in collection. 
-	//The 1 is temporary as it will get overwritten later by the parser
-	textureCollection.insert_or_assign(BOUNDARY, 1);
 	// Getting image data.
-	Image* image = loadTexture("assets/textures/wall.bmp");
-	// Parsing into texture for OpenGL
-	parseTexture(image, BOUNDARY);
+	image = SOIL_load_OGL_texture("assets/textures/wall.bmp", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	// Adding ID in collection. 
+	textureCollection.insert_or_assign(BOUNDARY, image);
 
-	textureCollection.insert_or_assign(Empty, 1);
-	image = loadTexture("assets/textures/floor.bmp");
-	parseTexture(image, Empty);
+	//Image* image = loadTexture("assets/textures/wall.bmp");
+	//parseTexture(image, BOUNDARY);
 
-	textureCollection.insert_or_assign(Wall, 1);
-	image = loadTexture("assets/textures/tileWall.bmp");
-	parseTexture(image, Wall);
+	image = SOIL_load_OGL_texture("assets/textures/floor.bmp", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(Empty, image);
 
-	textureCollection.insert_or_assign(DoorClosed, 1);
-	image = loadTexture("assets/textures/door.bmp");
-	parseTexture(image, DoorClosed);
 
-	textureCollection.insert_or_assign(SplashArt0, 1);
-	image = loadTexture("assets/textures/splash0.bmp");
-	parseTexture(image, SplashArt0);	
+	image = SOIL_load_OGL_texture("assets/textures/tileWall.bmp", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(Wall, image);
+
+
+	image = SOIL_load_OGL_texture("assets/textures/door.bmp", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(DoorClosed, image);
+
+
+	image = SOIL_load_OGL_texture("assets/textures/enemy1.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(Enemy, image);
+
+
+	image = SOIL_load_OGL_texture("assets/textures/splash0.bmp", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(SplashArt0, image);
+
+	image = SOIL_load_OGL_texture("assets/textures/splash1.bmp", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(SplashArt1, image);
+
+
+	//recursively added enemy textures since they're similar names lol
+	std::string enemyPath = "assets/textures/enemy/";
+
+	// enemies have 6 states.
+	for (int i = 0; i < 6; i++) {
+
+		image = SOIL_load_OGL_texture((enemyPath + std::to_string(i) + ".png").c_str(), SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+		textureCollection.insert_or_assign(ENEMY_IDLE_STATE_0 + i, image);
+
+
+	}
 	
-	textureCollection.insert_or_assign(SplashArt1, 1);
-	image = loadTexture("assets/textures/splash1.bmp");
-	parseTexture(image, SplashArt1);
-
 
 }
 
@@ -331,6 +342,7 @@ static void devScreen() {
 	glEnd();
 
 	toggleTransparency(false);
+
 	toggleOverlayMode(false);
 
 
@@ -415,6 +427,7 @@ void renderScene(void) {
 
 	// mouse tracking
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClearColor(1, 1, 1, 1);
 	glLoadIdentity();
 	glMatrixMode(GL_MODELVIEW);
 	glDisable(GL_TEXTURE_2D);
@@ -423,15 +436,15 @@ void renderScene(void) {
 	if (currentScene >= 0)
 		switch (currentScene) {
 			// case 0 should be pause.
-		case 0:
-			menu();
-			break;
-		case 1:
-			//pause();
-			break;
-		default:
-			renderText(0, glutGet(GLUT_WINDOW_HEIGHT) / 2.0f, 1, 0, 0, "Error Assigning Scene. | Scene is null");
-			break;
+			case 0:
+				menu();
+				break;
+			case 1:
+				//pause();
+				break;
+			default:
+				renderText(0, glutGet(GLUT_WINDOW_HEIGHT) / 2.0f, 1, 0, 0, "Error Assigning Scene. | Scene is null");
+				break;
 		}
 	else renderGameElements();
 	// Game has started so start iterating through each level in a FIFO manner
@@ -452,10 +465,12 @@ void renderScene(void) {
 
 void showSplash(int splash) {
 
+	toggleOverlayMode(true);
+	toggleTransparency(true);
+
 	glColor3f(1, 1, 1);
 
 	glBindTexture(GL_TEXTURE_2D, textureCollection.at(splash));
-
 
 	// setting texture to repeat
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
@@ -466,43 +481,40 @@ void showSplash(int splash) {
 
 		glNormal3f(0, -1, 0);
 
-		glTexCoord2f(0.0, 0.0);
+		glTexCoord2f(0.0, 1.0);
 		glVertex2f(0, 0);
 
-		glTexCoord2f(1.0, 0.0);
+		glTexCoord2f(1.0, 1.0);
 		glVertex2f(glutGet(GLUT_WINDOW_WIDTH), 0);
 		
-		glTexCoord2f(1.0, 1.0);
+		glTexCoord2f(1.0, 0.0);
 		glVertex2f(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
 		
-		glTexCoord2f(0.0, 1.0);
+		glTexCoord2f(0.0, 0.0);
 		glVertex2f(0, glutGet(GLUT_WINDOW_HEIGHT));
 		
 	glEnd();
 
 	glDisable(GL_TEXTURE);
+	toggleOverlayMode(false);
+	toggleTransparency(false);
+
 }
 
 void menu() {
-
-	toggleOverlayMode(true);
-	toggleTransparency(true);
 		
 		int result = animateTex(SplashArt0);
 		//	checking if animation playback has started.
 
 		if (result == -1) {
+
 			menuQueue.front().show();
 			showSplash(SplashArt0);
+
 		}
 		else if (result == 1) currentScene = -1;
 		else showSplash(SplashArt1);
 		
-
-	toggleTransparency(false);
-	toggleOverlayMode(false);
-
-
 }
 
 // reads and writes for various game settings
@@ -599,22 +611,27 @@ void draw() {
 	// loops through a collection of 3D models and draws them in level.
 	for (int i = 0; i < objectCollection.size(); i++) {
 
+		toggleTransparency(true);
+
 		// Setting the texture if available.
 		if (objectCollection.at(i).texture && !wireframe) {
+
+			glEnable(GL_TEXTURE_2D);
 
 			glBindTexture(GL_TEXTURE_2D, textureCollection.at(abs(objectCollection.at(i).color)));
 
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
-			glEnable(GL_TEXTURE_2D);
 
 		}
 
 
+		// Loads the object in the world.
 		objectCollection.at(i).load();
 		
-		// Loads the object in the world.
+		toggleTransparency(false);
+
 		glDisable(GL_TEXTURE_2D);
 
 		// loading bullets (if any)
@@ -640,7 +657,6 @@ void renderWorldBox() {
 	// glEnable(GL_TEXTURE_2D);
 
 	// this is the ceiling.
-	// Not rendering this for now
 	// Rendering it in chunks so that lighting can spread.
 
 	int size = array_size(*levelQueue.front().levelGrid);
@@ -648,6 +664,8 @@ void renderWorldBox() {
 	int xAxis = 0, zAxis = 0;
 
 	// Rendering along the Z axis first and increase X after each pass.
+
+	/*
 	for (int xCounter = 0; xCounter < size; xCounter++) {
 
 		for (int zCounter = 0; zCounter < size; zCounter++) {
@@ -675,6 +693,7 @@ void renderWorldBox() {
 		zAxis += TILESIZE * 2;
 		xAxis = 0;
 	}
+	*/
 
 	// rendering floor.
 	xAxis = 0; zAxis = 0;
@@ -706,8 +725,6 @@ void renderWorldBox() {
 		xAxis = 0;
 	}
 
-
-
 	glBindTexture(GL_TEXTURE_2D, textureCollection.at(BOUNDARY));
 
 	// setting texture to repeat
@@ -715,6 +732,7 @@ void renderWorldBox() {
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
 	glBegin(GL_QUADS);
+
 	// Walls for level
 	// West side wall
 	glNormal3f(0, 1.0f, 0);
@@ -898,19 +916,19 @@ void listenForNormalKeys(unsigned char key, int xx, int yy) {
 
 	case 'W':
 	case 'w':
-		motion.Forward = true;
+		cameraPosition.motion.Forward = true;
 		break;
 	case 'A':
 	case 'a':
-		motion.Left = true;
+		cameraPosition.motion.Left = true;
 		break;
 	case 'S':
 	case 's':
-		motion.Backward = true;
+		cameraPosition.motion.Backward = true;
 		break;
 	case 'D':
 	case 'd':
-		motion.Right = true;
+		cameraPosition.motion.Right = true;
 		break;
 	case 'c':
 		collision = !collision;
@@ -926,19 +944,19 @@ void listenForNormalKeysRelease(unsigned char key, int x, int y) {
 	if (currentScene < 0) switch (key) {
 	case 'W':
 	case 'w':
-		motion.Forward = false;
+		cameraPosition.motion.Forward = false;
 		break;
 	case 'A':
 	case 'a':
-		motion.Left = false;
+		cameraPosition.motion.Left = false;
 		break;
 	case 'S':
 	case 's':
-		motion.Backward = false;
+		cameraPosition.motion.Backward = false;
 		break;
 	case 'D':
 	case 'd':
-		motion.Right = false;
+		cameraPosition.motion.Right = false;
 		break;
 	}
 }
@@ -959,6 +977,7 @@ void listenForSpecialKeys(int key, int x, int y) {
 		break;
 	case 103: //DOWN KEY
 		cameraPosition.y -= 0.10f;
+		cameraPosition.y -= 0.10f;
 		std::cout << cameraPosition.y << std::endl;
 		break;
 	case 100: //LEFT KEY
@@ -977,7 +996,14 @@ void listenForMouseClick(int button, int state, int x, int y) {
 	switch (button) {
 	case 0:
 		// incase it's being held down, don't do anything.
-		if (state && track) shoot(cameraPosition);
+		if (state && track) {
+			std::string posID = std::to_string((int) cameraPosition.toTile().x) + std::to_string((int) cameraPosition.toTile().z);
+			std::cout << posID << std::endl;
+			// checking the enemy is in the same tile as the player, in which case melee them to one shot.
+			shoot(cameraPosition);
+		}
+			
+			
 		// else do menu stuff
 		break;
 	}
@@ -1118,7 +1144,7 @@ void initLevels(std::queue <Level> queue) {
 				// Incase it's a note, it will be scaled down to be of only 0.1f height
 				if (tile.color == Notes) wallModifer = 0.1f;
 				// else if (tile.color == Empty) wallModifer = 0.01f;
-				else wallModifer = 20.0f;
+				else wallModifer = WALLSIZE;
 
 				tile.texturePoints.push_back({ 0.0, 0.0 });
 				tile.texturePoints.push_back({ 0.0, (float)repeatScale });
@@ -1211,6 +1237,8 @@ void renderGameElements() {
 	// Game sound management
 	if (playerInCombat) {
 
+		combatMusic->setVolume(1.0);
+
 		// assigning new sound if nothing is there.
 		if (!combatMusic) combatMusic = soundEngine->play2D(BATTLE_MUSIC_0, false, true, true);
 
@@ -1275,22 +1303,22 @@ void camera() {
 	float newX = 0.0, newZ = 0.0;
 
 	// Calculate new coordinate depending on key directions held.
-	if (motion.Forward) {
+	if (cameraPosition.motion.Forward) {
 		newX += cos((cameraPosition.yaw + 90) * TO_RADIANS) / movementSpeed;
 		newZ -= sin((cameraPosition.yaw + 90) * TO_RADIANS) / movementSpeed;
 	}
 
-	if (motion.Backward) {
+	if (cameraPosition.motion.Backward) {
 		newX += cos((cameraPosition.yaw + 90 + 180) * TO_RADIANS) / movementSpeed;
 		newZ -= sin((cameraPosition.yaw + 90 + 180) * TO_RADIANS) / movementSpeed;
 	}
 
-	if (motion.Left) {
+	if (cameraPosition.motion.Left) {
 		newX += cos((cameraPosition.yaw + 90 + 90) * TO_RADIANS) / movementSpeed;
 		newZ -= sin((cameraPosition.yaw + 90 + 90) * TO_RADIANS) / movementSpeed;
 	}
 
-	if (motion.Right) {
+	if (cameraPosition.motion.Right) {
 		newX += cos((cameraPosition.yaw + 90 - 90) * TO_RADIANS) / movementSpeed;
 		newZ -= sin((cameraPosition.yaw + 90 - 90) * TO_RADIANS) / movementSpeed;
 	}
@@ -1526,12 +1554,6 @@ void playQueuedAnimations() {
 
 		objectCollection.at(item.first).offset += difference / ANIMATIONSTEP;
 
-		// checking if animation is finished.
-		//! TODO: This is jank and doesn't translate well when dealing.
-		//! This never gets called because it's too busy doing microcalculations
-		//* Fixed by just converting all negative values to positive lmao
-		//* This has an unintended effect of easing the animation out.
-
 		if (difference.absolute() <= 0.01) {
 
 			objectCollection.at(item.first).offset = item.second;
@@ -1600,6 +1622,9 @@ void bulletPhysics() {
 
 	if (bulletMap.empty()) return;
 
+	//	checking if bullet and an enemy are in the same tile.
+
+
 	//std::cout << "Bullets in motion: " << bulletMap.size() << std::endl;
 	
 	std::unordered_map <std::string, ShibaObject> tempMap = bulletMap;
@@ -1667,7 +1692,6 @@ void bulletPhysics() {
 		//bullets will be deleted once they hit the map edge.
 		if (current.toPosition().x + item.second.offset.x < 0.0f - TILESIZE || current.toPosition().x + item.second.offset.x > levelBounds.x
 			|| current.toPosition().z + item.second.offset.z < 0.0f - TILESIZE || current.toPosition().x + item.second.offset.z > levelBounds.z) {
-			
 			bulletMap.erase(item.second.objectName);
 			//std::cout << "Bullet killed in tile (X:Z):  " << item.second.tileX << " : " << item.second.tileZ << std::endl;
 		}
@@ -1678,13 +1702,31 @@ void bulletPhysics() {
 
 }
 
+void melee(std::string id) {
+
+	// incase enemies are all dead
+	if (enemyCollection.empty()) return;
+
+	// kill the enemy
+	enemyCollection.at(id).health = 0;
+
+}
+
 void shoot(Position entity) {
 
 	// calculating next coord.
 	ShibaObject bullet(entity.x, entity.y, entity.z);
 
-	bullet.objectName = std::to_string(bullet.tileX) + std::to_string(bullet.tileZ);
+	bullet.objectName = std::to_string((int) entity.toTile().x) + std::to_string((int) entity.toTile().z);
 	bullet.offset.identifier = entity.identifier;
+	
+	std::cout << enemyCollection.count(bullet.objectName) << std::endl;
+	// 
+	// don't fire if piercing is off and enemy is in the same tile as player.
+	if (enemyCollection.count(bullet.objectName) && !BULLET_PIERCING) {
+		enemyCollection.erase(bullet.objectName);
+		return;
+	}
 
 	// adding only 1 quad as the object center/bullet hitbox
 	bullet.vertexCol.push_back({ entity.x, entity.y, entity.z, {0, 1.0f, 0} });
@@ -1704,7 +1746,7 @@ void enemyPathing() {
 
 	//	Spawn new enemies if needed.
 	//	change this to spawn enemies proportional to game level and amount of spawners.
-	if (levelSpawning && enemyCollection.size() < 1) {
+	if (levelSpawning && enemyCollection.size() < levelQueue.front().enemies/2) {
 
 		int id = enemySpawnerLocations.at(randomInt(0, enemySpawnerLocations.size() - 1));
 
@@ -1749,37 +1791,39 @@ void enemyPathing() {
 			ShibaObject tempEnemy(
 				spawnerX, GROUNDLEVEL, spawnerZ
 			);
+
+			tempEnemy.state = 5;
+
 			tempEnemy.offset.identifier = Enemy;
 
 			tempEnemy.vertexCol.push_back({ 
 				spawnerX, GROUNDLEVEL, spawnerZ, {0.0, -1.0f, 0.0} 
 			});
 
-			tempEnemy.objectName = std::to_string(tempEnemy.vertexCol.at(0).x) + std::to_string(tempEnemy.vertexCol.at(0).z);
+			tempEnemy.objectName = std::to_string((int) tempEnemy.vertexCol.at(0).toPosition().toTile().x) + std::to_string((int) tempEnemy.vertexCol.at(0).toPosition().toTile().z);
 			tempEnemy.setLoadGlutFunction(enemyModel);
+			tempEnemy.updateTileCoords();
 
 			// initialize with with a path towards player. ONLY if they're within 5 tiles
 			tempEnemy.pathing = aStarImplementation(tempEnemy, cameraPosition, RANGED_ENEMY_DETECTION_RANGE);
 
-			//tempEnemy.pathing.push(tempEnemy.vertexCol.at(0).translateTile(DOWN));
-			//tempEnemy.pathing.push(tempEnemy.vertexCol.at(0).translateTile(RIGHT));
-			//tempEnemy.pathing.push(tempEnemy.vertexCol.at(0).translateTile(UP));
-			//tempEnemy.pathing.push(tempEnemy.vertexCol.at(0).translateTile(LEFT));
-			//tempEnemy.pathing.push(tempEnemy.vertexCol.at(0).translateTile(DOWN));
 
 			//tempEnemy.loopPath = true;
 
 			enemyCollection.insert_or_assign(tempEnemy.objectName, tempEnemy);
-			//std::cout << "Added enemy: " << tempEnemy.objectName << std::endl;
+			std::cout << "Added enemy: " << tempEnemy.objectName << std::endl;
 		}
 
 
 	}
 
+
 	// Enemy path finding algo goes here
 	// exit if there's nothing to iterate
 
 	if (enemyCollection.empty()) return;
+
+	std::unordered_map<std::string, ShibaObject> tempCollection;
 
 	for (auto& item : enemyCollection) {
 
@@ -1794,33 +1838,16 @@ void enemyPathing() {
 			};
 
 			Position difference = front.toPosition() - current.toPosition();
+			float randomOffset = 1 / (float) randomInt(0, 5);
 
 			if (difference.x < 0) item.second.offset.facing.south = true;
 			else if (difference.x > 0) item.second.offset.facing.north = true;
 			else if (difference.z < 0) item.second.offset.facing.west = true;
 			else if (difference.z > 0) item.second.offset.facing.east = true;
 
-			item.second.offset += (difference / (ANIMATIONSTEP * 10.0f));
+			item.second.offset += (difference / (ANIMATIONSTEP * 2.0f));
 
-			//TODO  the concept works but the forumla is incorrect.
-			
-			//float adjacent, opposite, theta;
-
-			//adjacent = (item.second.offset.x + current.x) - cameraPosition.x;
-			//opposite = (item.second.offset.z + current.z) - cameraPosition.z;
-
-			//theta = tan(fabs(opposite) / fabs(adjacent));
-
-			//item.second.offset.yaw = theta * 360;
-
-			//if (lastKey == (int)'x') {
-			//	std::cout << theta * 360 << std::endl;
-
-			//	shoot(item.second.getRawCoords());
-			//	lastKey = -1;
-			//}
-
-			if ((front.toPosition() - (current.toPosition() + item.second.offset)).absolute() <= 0.01f) {
+			if ((front.toPosition() - (current.toPosition() + item.second.offset)).absolute() <= 0.01f + TILESIZE) {
 
 				item.second.vertexCol.at(0) = item.second.pathing.front();
 				item.second.offset = { 0.0f, 0.0f, 0.0f };
@@ -1833,11 +1860,17 @@ void enemyPathing() {
 
 		}
 
-		item.second.updateTileCoords();
-		
+
 		std::string id = std::to_string(item.second.tileX) + std::to_string(item.second.tileZ);
+		item.second.updateTileCoords();
+
 		item.second.loadGlutSolids();
 		
+		if (lastKey == (int) 'v') {
+			std::cout << id << std::endl;
+			lastKey = -1;
+		}
+
 		// collision check for enemies with bullets
 		if (bulletMap.count(id) != 0 && bulletMap.at(id).offset.identifier != item.second.offset.identifier) {
 			
@@ -1872,7 +1905,10 @@ void enemyPathing() {
 			// !TODO: Switch to melee attack if enemy and player are in the same tile.
 			if (xPass1 && xPass2 && zPass1 && zPass2 && yPass1 && yPass2) {
 				//std::cout << "HIT" << std::endl;
-				item.second.health -= PLAYER_DAMAGE;
+
+				// inflict damage if hitting during combat. One shot if not detected.
+				if (playerInCombat) item.second.health -= PLAYER_DAMAGE;
+				else item.second.health = 0;
 
 				if (item.second.health <= 0) {
 					enemyCollection.erase(item.first);
@@ -1886,17 +1922,24 @@ void enemyPathing() {
 
 		}
 
-
 		//updating range data.
 		item.second.pathing = aStarImplementation(item.second, cameraPosition, RANGED_ENEMY_DETECTION_RANGE);
 
+		tempCollection.insert_or_assign(id, item.second);
 
 	}
+
+	// updatting tile values for enemies.
+	enemyCollection.clear();
+	enemyCollection = tempCollection;
+	tempCollection.clear();
+
+
 
 
 }
 
-std::queue<ShibaQuad> aStarImplementation(ShibaObject& entity, Position& goal, int range) {
+std::queue<ShibaQuad> aStarImplementation(ShibaObject& entity, Position goal, int range) {
 	
 	// enemy range for detection.
 	std::vector <int> objectIDRange;
@@ -1953,29 +1996,6 @@ std::queue<ShibaQuad> aStarImplementation(ShibaObject& entity, Position& goal, i
 
 	}
 	
-	
-	// code that gives linear vision
-	/*
-	tempPos.moveBackward();
-
-	for (int i = 0; i <= range; i++) {
-
-		// add the current tile.
-		checkForInteraction(tempPos);
-
-		if (tempPos.frontObject != -1)
-			objectIDRange.push_back(tempPos.frontObject);
-
-		tempPos.moveForward();
-
-		//// count * range + 1 for cone of vision
-		//for (int j = i * range + 1; j > 0; j++) {
-
-		//}
-
-	}
-	*/
-
 
 	if (!objectIDRange.empty()) entity.rangeIDCol = objectIDRange;
 
@@ -2011,12 +2031,11 @@ std::queue<ShibaQuad> aStarImplementation(ShibaObject& entity, Position& goal, i
 	// recursively add paths to the map as the enemy explores the tiles.
 	// termination condition: If all of the paths are visited and we're back in the source. There is no path to goal.
 	// loop runs indefinite number of times. Will only terminate once num of visited tiles == size of map.
-	std::cout << "Tracing path to player...." << std::endl;
+	//std::cout << "Tracing path to player...." << std::endl;
 
 	int iterations = 0;
 
-	// limiting to 12 steps because why not
-	while (iterations < 12 && source.cost != 0 && !samePos) {
+	while ((iterations < 12 && source.cost != 0 && !samePos)) {	// limiting to 12 steps because why not
 
 		int lowestCost = -1;
 		std::string lowestCostID;
@@ -2082,7 +2101,7 @@ std::queue<ShibaQuad> aStarImplementation(ShibaObject& entity, Position& goal, i
 
 		if (lowestCostID.empty()) {
 			backtrack = true;
-			std::cout << "Backtracking.." << std::endl;
+			//std::cout << "Backtracking.." << std::endl;
 
 			if (!pathStack.empty()) {
 				switch (pathStack.back().direction) {
@@ -2114,7 +2133,8 @@ std::queue<ShibaQuad> aStarImplementation(ShibaObject& entity, Position& goal, i
 
 			}
 
-			std::cout << "going " << txt << " Cost:" << pathMap.at(lowestCostID).cost << " Object Name: " << objectCollection.at(trace.frontObject).objectName << std::endl;
+			//std::cout << "going " << txt << " Cost:" << pathMap.at(lowestCostID).cost << " Object Name: " << objectCollection.at(trace.frontObject).objectName << std::endl;
+			
 			trace.facing = {
 				pathMap.at(lowestCostID).direction == UP,
 				pathMap.at(lowestCostID).direction == DOWN,
@@ -2144,36 +2164,45 @@ std::queue<ShibaQuad> aStarImplementation(ShibaObject& entity, Position& goal, i
 		
 		// checking if we arrived at the destination
 		if (!pathStack.empty() && pathStack.back().cost == 0) {
-			std::cout << "Reached Goal early. Terminating" << std::endl;
-			
-			//adding paths to queue.
-			for (Path i : pathStack) {
-				switch (i.direction)
-				{
+			//std::cout << "Reached Goal early. Terminating" << std::endl;
+			playerInCombat = true;
+
+			//checking we even need to do this.
+			// checking if pathing is required incase player is not moving.
+			if (goal.motion.isMoving() || entity.pathing.empty())
+				for (Path i : pathStack) {	//adding paths to queue.
+					switch (i.direction)
+					{
 					case UP: finalQueue.push(tempObject.vertexCol.at(0).translateTile(UP)); break;
 					case DOWN: finalQueue.push(tempObject.vertexCol.at(0).translateTile(DOWN)); break;
 					case LEFT: finalQueue.push(tempObject.vertexCol.at(0).translateTile(LEFT)); break;
 					case RIGHT: finalQueue.push(tempObject.vertexCol.at(0).translateTile(RIGHT)); break;
+					}
 				}
-			}
+			else finalQueue = entity.pathing;
 
 			break;
 		}
+		else playerInCombat = false;
 
 		iterations++;
 
 	}
 
-	std::cout << "Path trace complete." << std::endl;
+	//std::cout << "Path trace complete." << std::endl;
 
-	if (iterations == 0)
-		std::cout << "Already reached goal. Trace skipped" << std::endl;
-	else if (iterations == 12)
-		std::cout << "Player out of range for detection." << std::endl;
-	else {
-		// found a path to goal.
-		for (Path i : pathStack) pathID.push_back(i.objectID);
+	//if (iterations == 0)
+	//	std::cout << "Already reached goal. Trace skipped" << std::endl;
+	//else if (iterations == 12)
+	//	std::cout << "Player out of range for detection." << std::endl;
+	//else {
+	//	// found a path to goal.
 
+	//}
+
+
+	if (iterations > 0 && iterations != 12) {
+		for (Path i : pathStack) pathID.push_back(i.objectID); 
 	}
 	
 	if (!pathID.empty()) entity.pathIDCol = pathID;
@@ -2191,71 +2220,45 @@ void enemyModel(ShibaObject a) {
 
 	center = a.vertexCol.at(0);
 
-	//	For now rendering a white plane as enemy. Apply texture over it later.
-	if (a.health <= 10) glColor3f(1, 0, 0);
-	else if (a.health <= 50) glColor3f(1, 1, 0);
-	else glColor3f(1, 1, 1);
-
-	glPushMatrix();
-
-		glTranslatef(
-			center.x + a.offset.x,
-			center.y + a.offset.y, 
-			center.z + a.offset.z
-		);
-		glRotatef(cameraPosition.yaw + 90, 0, 1, 0);	//rotate the object with respect to camera yaw
-
-		glBegin(GL_QUADS);
-			glNormal3f(0, -1, 0);
-
-			glVertex3f(0, 0, -enemyWidth / 2.0f);
-			glVertex3f(0, 0, enemyWidth / 2.0f);
-			glVertex3f(0, 10, enemyWidth / 2.0f);
-			glVertex3f(0, 10, -enemyWidth / 2.0f);
-
-		glEnd();
-
-	glPopMatrix();
-
 	// making an indicator for enemy.
 	glColor3f(1, 0, 0);
 	glPushMatrix();
-		glTranslatef(
-			center.x + a.offset.x,
-			WALLSIZE + 0.5f,
-			center.z + a.offset.z
-		);
-		glutSolidCube(TILESIZE);
+	glTranslatef(
+		center.x + a.offset.x,
+		WALLSIZE + 0.5f,
+		center.z + a.offset.z
+	);
+	glutSolidCube(TILESIZE);
 	glPopMatrix();
 
 	// drawing range of enemies
 	if (!a.rangeIDCol.empty()) for (int i : a.rangeIDCol) {
 
-			// checking if player is within range.
-			if (objectCollection.at(i).tileX == cameraPosition.toTile().x && objectCollection.at(i).tileZ == cameraPosition.toTile().z) {
-				glColor3f(1, 0, 0);
-				int res = animateTex(EnemySpawner, 120);
-				if (res == 1) player.health -= 1;
-			}
-			else {
-				glColor3f(0, 1, 0);
-			}
-
-
-			glPushMatrix();
-				
-				
-				glTranslatef(objectCollection.at(i).tileX * 10, GROUNDLEVEL, objectCollection.at(i).tileZ * 10);
-				
-
-				glPushMatrix();
-						glScalef(1, 0.01, 1);
-						glutSolidCube(TILESIZE * 2);
-				glPopMatrix();
-
-
-			glPopMatrix();
+		// checking if player is within range.
+		if (objectCollection.at(i).tileX == cameraPosition.toTile().x && objectCollection.at(i).tileZ == cameraPosition.toTile().z) {
+			glColor3f(1, 0, 0);
+			int res = animateTex(EnemySpawner, 120);
+			if (res == 1) player.health -= 1;
 		}
+		else {
+			glColor3f(0, 1, 0);
+		}
+
+
+		glPushMatrix();
+
+
+		glTranslatef(objectCollection.at(i).tileX * 10, GROUNDLEVEL, objectCollection.at(i).tileZ * 10);
+
+
+		glPushMatrix();
+		glScalef(1, 0.01, 1);
+		glutSolidCube(TILESIZE * 2);
+		glPopMatrix();
+
+
+		glPopMatrix();
+	}
 
 	// drawing path enemy will is going to take.
 	if (!a.pathIDCol.empty()) for (int i : a.pathIDCol) {
@@ -2265,15 +2268,73 @@ void enemyModel(ShibaObject a) {
 
 		glTranslatef(objectCollection.at(i).tileX * 10, WALLSIZE + 0.01f, objectCollection.at(i).tileZ * 10);
 
-			glPushMatrix();
-				glScalef(1, 0.01, 1);
-				glutSolidCube(TILESIZE * 2);
-			glPopMatrix();
+		glPushMatrix();
+		glScalef(1, 0.01, 1);
+		glutSolidCube(TILESIZE * 2);
+		glPopMatrix();
 
 		glPopMatrix();
 
 	}
 
+
+	//	For now rendering a white plane as enemy. Apply texture over it later.
+	if (a.health <= 10) glColor3f(1, 0, 0);
+	else if (a.health <= 50) glColor3f(1, 1, 0);
+	else glColor3f(1, 1, 1);
+
+	toggleTransparency(true);
+
+	glPushMatrix();
+
+		glTranslatef(
+			center.x + a.offset.x,
+			center.y + a.offset.y, 
+			center.z + a.offset.z
+		);
+
+		glRotatef(cameraPosition.yaw + 90, 0, 1, 0);	//rotate the object with respect to camera yaw
+		
+		float res = (float) animateTex(ENEMY_IDLE_STATE_0, 1000, true);
+
+		res = (int) (res / 100) - 5;
+		std::cout << (int) fabs(res) << std::endl;
+
+
+		int id = ENEMY_IDLE_STATE_0 + (int)fabs(res);
+
+		GLuint selectedTex = textureCollection.at(id);
+
+		glBindTexture(GL_TEXTURE_2D, selectedTex);
+
+		// setting texture to repeat
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+		glEnable(GL_TEXTURE_2D);
+
+
+		glBegin(GL_QUADS);
+			glNormal3f(0, -1, 0);
+
+			glTexCoord2f(0, 1.0);
+			glVertex3f(0.2, 0, -enemyWidth / 2.0f);
+
+			glTexCoord2f(1, 1.0);
+			glVertex3f(0, 0, enemyWidth / 2.0f);
+
+			glTexCoord2f(1, 0.0);
+			glVertex3f(0, 10, enemyWidth / 2.0f);
+
+			glTexCoord2f(0, 0.0);
+			glVertex3f(0, 10, -enemyWidth / 2.0f);
+
+		glEnd();
+
+	glDisable(GL_TEXTURE_2D);
+
+	glPopMatrix();
+
+	toggleTransparency(false);
 
 }
 

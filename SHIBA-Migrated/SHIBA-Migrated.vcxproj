@@ -71,20 +71,24 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(SolutionDir)Dependencies\freeglut\include;$(SolutionDir)Dependencies\irrklang\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)Dependencies\freeglut\include;$(SolutionDir)Dependencies\irrklang\include;$(SolutionDir)Dependencies\SOIL2\include;$(IncludePath)</IncludePath>
     <LibraryPath>"$(SolutionDir)Dependencies\freeglut\lib\$(Platform)";"$(SolutionDir)Dependencies\irrklang\lib";$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>$(SolutionDir)Dependencies\freeglut\include;$(SolutionDir)Dependencies\irrklang\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)Dependencies\freeglut\include;$(SolutionDir)Dependencies\irrklang\include;$(SolutionDir)Dependencies\SOIL2\include;$(IncludePath)</IncludePath>
     <LibraryPath>"$(SolutionDir)Dependencies\freeglut\lib\$(Platform)";"$(SolutionDir)Dependencies\irrklang\lib";$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(SolutionDir)Dependencies\freeglut\include;$(SolutionDir)Dependencies\irrklang\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)Dependencies\freeglut\include;$(SolutionDir)Dependencies\irrklang\include;$(SolutionDir)Dependencies\SOIL2\include;$(IncludePath)</IncludePath>
     <LibraryPath>"$(SolutionDir)Dependencies\freeglut\lib\$(Platform)";"$(SolutionDir)Dependencies\irrklang\lib";$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(SolutionDir)Dependencies\freeglut\include;$(SolutionDir)Dependencies\irrklang\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)Dependencies\freeglut\include;$(SolutionDir)Dependencies\irrklang\include;$(SolutionDir)Dependencies\SOIL2\include;$(IncludePath)</IncludePath>
     <LibraryPath>"$(SolutionDir)Dependencies\freeglut\lib\$(Platform)";"$(SolutionDir)Dependencies\irrklang\lib";$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -98,7 +102,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>freeglut.lib;irrKlang.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>freeglut.lib;irrKlang.lib;soil2.lib;soil2-debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)\Dependencies\SOIL2\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(SolutionDir)Dependencies\freeglut\bin\$(Platform)\freeglut.dll" "$(OutDir)</Command>
@@ -120,7 +125,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>freeglut.lib;irrKlang.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>freeglut.lib;irrKlang.lib;soil2.lib;soil2-debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)\Dependencies\SOIL2\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(SolutionDir)Dependencies\freeglut\bin\$(Platform)\freeglut.dll" "$(OutDir)</Command>
@@ -138,7 +144,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>freeglut.lib;irrKlang.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>freeglut.lib;irrKlang.lib;soil2.lib;soil2-debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)\Dependencies\SOIL2\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(SolutionDir)Dependencies\freeglut\bin\$(Platform)\freeglut.dll" "$(OutDir)</Command>
@@ -160,7 +167,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>freeglut.lib;irrKlang.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>freeglut.lib;irrKlang.lib;soil2.lib;soil2-debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)\Dependencies\SOIL2\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(SolutionDir)Dependencies\freeglut\bin\$(Platform)\freeglut.dll" "$(OutDir)</Command>

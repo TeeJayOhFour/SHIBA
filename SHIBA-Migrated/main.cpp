@@ -1,5 +1,5 @@
 
-//including IO stream or stdlib not required as it's in engine.hpp already.
+//including IO stream or stdlib not required as it's in Shiba.h already.
 #include "SHIBA.h"
 
 using namespace std;
@@ -74,44 +74,98 @@ static void drawHuman(ShibaObject a) {
 
 static void drawRocket(ShibaObject a) {
 
-    // Rocket body
-    glColor3f(0.694, 0.694, 0.686);
+    ShibaQuad center = a.vertexCol.at(0);
+    center.y = 15;
+
+    // Draw Rocket Body
     glPushMatrix();
-    glTranslated(7.5, -18, -120);
+
+    GLUquadricObj* rocketBody = gluNewQuadric();
+    gluQuadricDrawStyle(rocketBody, GLU_FILL);
+    gluQuadricNormals(rocketBody, GLU_SMOOTH);
+    gluQuadricOrientation(rocketBody, GLU_OUTSIDE);
+
+    glColor3f(0.694, 0.694, 0.686);
+
+    glTranslated(center.x + 0 + a.offset.x, center.y + a.offset.y + -18, center.z + a.offset.z + 1);
     glRotated(-90, 1, 0, 0);
-    glutSolidCylinder(4.5, 30, 32, 32);
+    
+    gluCylinder(rocketBody, 4.5, 4.5, 30, 32, 32);
+
+    // Draw Windows on Rocket Body
+    glColor3f(0, 0, 0);
+
+    int windows[5] = { -5, -10, -15, -20, -25 };
+
+    for (int i = 0; i < 5; i++) {
+        glPushMatrix();
+
+            glRotated(90, 0, 0, 1);
+            glRotated(-90, 1, 0, 0);
+            glTranslated(0, windows[i], 0);
+            glScalef(6.45, 1, 1);
+            glutSolidCube(1.4);
+
+        glPopMatrix();
+    }
+
     glPopMatrix();
 
-    // Rocket bottom
+    // Draw Rocket Bottom
     glColor3f(0.564, 0.541, 0.517);
     glPushMatrix();
-    glTranslated(7.5, -18, -120);
+
+    glTranslated(center.x + 0 + a.offset.x, center.y + a.offset.y + -18, center.z + a.offset.z + 1);
+
     glRotated(-90, 1, 0, 0);
     glutSolidSphere(4.5, 32, 32);
     glPopMatrix();
 
-    // Rocket plates
+    // Draw Rocket Top
+    glColor3f(0.6, 0.6, 0.6);
+    glPushMatrix();
+
+    glTranslated(center.x + 0 + a.offset.x, center.y + a.offset.y + 12, center.z + a.offset.z + 1);
+
+    glRotated(-90, 1, 0, 0);
+    glutSolidCone(4.5, 10.0, 32, 32);
+    glPopMatrix();
+
+    // Draw Rocket Plates
+    GLUquadricObj* rocketPlate = gluNewQuadric();
+    gluQuadricDrawStyle(rocketPlate, GLU_FILL);
+    gluQuadricNormals(rocketPlate, GLU_SMOOTH);
+    gluQuadricOrientation(rocketPlate, GLU_OUTSIDE);
     glColor3f(0.427, 0.180, 0.094);
 
+    // Draw the right most plate
     glPushMatrix();
-    glTranslated(7.5, -15.5, -120);
+
+    glTranslated(center.x + 0 + a.offset.x, center.y + a.offset.y + -15.5, center.z + a.offset.z + 1);
+
     glRotatef(45, 0, 1, 0);
     glRotatef(160, 1, 0, 0);
-    glutSolidTorus(1, 8, 10, 5);
+    gluPartialDisk(rocketPlate, 4.5, 18, 10, 5, 0, 30);
     glPopMatrix();
 
+    // Draw the back plate
     glPushMatrix();
-    glTranslated(7.5, -15.5, -120);
+
+    glTranslated(center.x + 0 + a.offset.x, center.y + a.offset.y + -15.5, center.z + a.offset.z + 1);
+
     glRotatef(160, 1, 0, 0);
     glRotatef(-90, 0, 1, 0);
-    glutSolidTorus(1, 8, 10, 5);
+    gluPartialDisk(rocketPlate, 4.5, 18, 10, 5, 0, 30);
     glPopMatrix();
 
+    // Draw the left most plate
     glPushMatrix();
-    glTranslated(7.5, -15.5, -120);
+
+    glTranslated(center.x + 0 + a.offset.x, center.y + a.offset.y + -15.5, center.z + a.offset.z + 1);
+
     glRotatef(225, 0, 1, 0);
     glRotatef(160, 1, 0, 0);
-    glutSolidTorus(1, 8, 10, 5);
+    gluPartialDisk(rocketPlate, 4.5, 18, 10, 5, 0, 30);
     glPopMatrix();
 
 }
@@ -304,7 +358,8 @@ int main(int argc, char** argv) {
 
     //! TODO Allow shibaobject to handle glutsolids
     ShibaObject zaki(0, 0, 0);
-    zaki.setLoadGlutFunction(Batman);
+    zaki.offset.x = -7.5;
+    zaki.setLoadGlutFunction(drawRocket);
      meow1.customObjects.push_back(zaki);
 
     // batman.setLoadGlutFunction(&kyakya);
