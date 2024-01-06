@@ -524,19 +524,14 @@ public:
 class Level {
 public:
 	std::string name;
-	int levelGrid[20][20];
+	int(*levelGrid)[20];
 	int objectives = 0;
 	int enemies = 0;
 	std::vector <ShibaObject> customObjects;
 
 	Level(std::string levelName, int map[][20]) {
 		this->name = levelName;
-		int  i, j;
-		for (i = 0; i < 20; i++)
-		{
-			for (j = 0; j < 20; j++)
-				levelGrid[i][j] = map[i][j];
-		}
+		levelGrid = map;
 	}
 
 	void printLevel() const {

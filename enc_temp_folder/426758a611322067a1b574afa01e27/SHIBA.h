@@ -849,16 +849,8 @@ void listenForNormalKeys(unsigned char key, int xx, int yy) {
 		break;
 
 	case (int)'l':
-
-		if (levelQueue.size() == 1) {
-			
-			resetSHIBA(RESET_ENGINE);
-			currentScene = 0;
-		}
-		else {
-			levelQueue.pop();
-			initLevels(levelQueue);
-		}
+		levelQueue.pop();
+		initLevels(levelQueue);
 		break;
 
 	//RESET EVERYTHING
@@ -1114,22 +1106,31 @@ void renderText(float x, float y, int r, int g, int b, const char* string) {
 
 void initLevels(std::queue <Level> queue) {
 
-	levelQueue = queue;
+	while (!levelQueue.empty()) {
+		levelQueue.pop();
+	}
+
+	// making a copy of each level rather than using the reference.
+	while (!queue.empty()) {
+
+		Level temp = Level(temp);
+
+		levelQueue.push(temp);
+		queue.pop();
+
+	}
+
 
 	// clearing spawn locations of previous level.
 	possibleSpawns.clear();
 	objectCollection.clear();
 	enemySpawnerLocations.clear();
-	animationQueue.clear();
-	globalAnimationDelay.clear();
-	enemyCollection.clear();
-	bulletMap.clear();
 
 	int size = array_size(*queue.front().levelGrid);
-
 	float x = 0.0, y = GROUNDLEVEL, z = 0.0;
 
 	if (DEBUGMODE) std::cout << "[Method] initLevels: Number of levels is " << queue.size() << std::endl;
+
 	std::cout << "Initializing Level..." << std::endl;
 
 	int repeatScale = 1;

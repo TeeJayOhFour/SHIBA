@@ -370,21 +370,27 @@ int main(int argc, char** argv) {
     LevelQueue.push(meow1);
     LevelQueue.push(meow2);
     LevelQueue.push(meow3);
-    LevelQueue.push(meow4);
+    LevelQueue.push(meow4);    
+    
+
+    backupLevelQueue.push(meow1);
+    backupLevelQueue.push(meow2);
+    backupLevelQueue.push(meow3);
+    backupLevelQueue.push(meow4);
 
     // 2. Pathfinding callback function (for deciding next tile)
     // 3. Enemy Prioritization callback function (for targetting closest threat)
 
-    // launches the engine with configured settings.
+    //pushing the initial levels.
     initLevels(LevelQueue);
 
     // Shows startup screen
     currentScene = 0;
 
     try {
-        launch(argc, argv); //starts game
-        // add some logic here to handle level completion.
-        // isLevelComplete() == true
+
+        // launches the engine with configured settings.
+        int state = launch(argc, argv);
 
     }
     catch (const invalid_argument& e) {

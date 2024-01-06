@@ -625,9 +625,7 @@ void draw() {
 
 			glEnable(GL_TEXTURE_2D);
 
-			glBindTexture(GL_TEXTURE_2D, textureCollection.at(
-				abs(objectCollection.at(i).color)
-			));
+			glBindTexture(GL_TEXTURE_2D, textureCollection.at(abs(objectCollection.at(i).color)));
 
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
@@ -825,7 +823,9 @@ void resetSHIBA(int state) {
 		track ? glutSetCursor(GLUT_CURSOR_NONE) : glutSetCursor(GLUT_CURSOR_INHERIT);
 
 		
-		initLevels(backupLevelQueue);
+		levelQueue = backupLevelQueue;
+		resetCamera();
+
 
 	}
 	
@@ -849,16 +849,8 @@ void listenForNormalKeys(unsigned char key, int xx, int yy) {
 		break;
 
 	case (int)'l':
-
-		if (levelQueue.size() == 1) {
-			
-			resetSHIBA(RESET_ENGINE);
-			currentScene = 0;
-		}
-		else {
-			levelQueue.pop();
-			initLevels(levelQueue);
-		}
+		levelQueue.pop();
+		initLevels(levelQueue);
 		break;
 
 	//RESET EVERYTHING
@@ -1114,22 +1106,21 @@ void renderText(float x, float y, int r, int g, int b, const char* string) {
 
 void initLevels(std::queue <Level> queue) {
 
-	levelQueue = queue;
+	while (!levelQueue.empty()) {
+		levelQueue.pop();
+	}
 
 	// clearing spawn locations of previous level.
 	possibleSpawns.clear();
 	objectCollection.clear();
 	enemySpawnerLocations.clear();
-	animationQueue.clear();
-	globalAnimationDelay.clear();
-	enemyCollection.clear();
-	bulletMap.clear();
 
 	int size = array_size(*queue.front().levelGrid);
-
 	float x = 0.0, y = GROUNDLEVEL, z = 0.0;
 
 	if (DEBUGMODE) std::cout << "[Method] initLevels: Number of levels is " << queue.size() << std::endl;
+
+	levelQueue = queue;
 	std::cout << "Initializing Level..." << std::endl;
 
 	int repeatScale = 1;

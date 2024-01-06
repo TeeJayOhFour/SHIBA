@@ -16,7 +16,7 @@
 #include <iomanip>
 #include <SOIL2.h>
 
-#define TITLE "SHIBA Engine v1.8 by TJ | Copyright 2023"
+#define TITLE "SHIBA Engine v1.9 by TJ | Copyright 2023"
 // Stupidly Horrendous Implementation of Basic Animations
 
 
@@ -42,6 +42,7 @@ constexpr auto HEIGHT = 9*80;
 
 constexpr auto PLAYER_DAMAGE = 90;
 constexpr auto BULLET_PIERCING = false;
+constexpr auto PLAYER_HP = 100;
 
 constexpr auto RANGED_ENEMY_DETECTION_RANGE = 1;
 
