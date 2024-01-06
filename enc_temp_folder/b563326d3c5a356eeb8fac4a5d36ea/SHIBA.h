@@ -1604,18 +1604,10 @@ void queueAnimation(int id, int x, int z) {
 
 	case LevelExitOpen:
 
+		player.objectives = 0;
+		levelQueue.pop();
 		// render the next level.
-		if (levelQueue.size() == 1) {
-
-			resetSHIBA(RESET_ENGINE);
-			currentScene = 0;
-
-		}
-		else {
-			levelQueue.pop();
-			initLevels(levelQueue);
-			player.objectives = 0;
-		}
+		initLevels(levelQueue);
 		break;
 
 	case LevelExit:

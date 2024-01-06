@@ -49,8 +49,6 @@ enum tileID {
 	DoorOpen = -5,
 	Boss = 6,
 	Custom = 7,
-	LevelExit = 8,
-	LevelExitOpen = 80,
 	Bullet = 10
 };
 
@@ -346,9 +344,6 @@ static void getColorMod(int id) {
 		break;
 	case Boss:		//Boss Location: Orange
 		glColor3f(1.0, 0.60, 0.0);
-		break;
-	case LevelExit:	//white
-		glColor3f(1.0, 1.0, 1.0);	
 		break;
 	case Custom:		//Custom 3D model unique to map: Green
 		glColor3f(0.0, 1.0, 0.0);

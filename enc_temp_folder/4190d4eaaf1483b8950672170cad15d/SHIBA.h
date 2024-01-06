@@ -867,7 +867,6 @@ void resetSHIBA(int state) {
 		track = false;
 		track ? glutSetCursor(GLUT_CURSOR_NONE) : glutSetCursor(GLUT_CURSOR_INHERIT);
 		PLAYER_HP_MOD = 0;
-		player.objectives = 0;
 
 		
 		initLevels(backupLevelQueue);
@@ -909,7 +908,6 @@ void listenForNormalKeys(unsigned char key, int xx, int yy) {
 		else {
 			levelQueue.pop();
 			initLevels(levelQueue);
-			player.objectives = 0;
 		}
 		break;
 
@@ -1493,8 +1491,7 @@ bool collisionCheck(int direction, float x, float z) {
 	if (
 		(direction == 1)
 		&& //checking if within bounds
-		(tileVal == Wall || tileVal == Boss || tileVal == Custom || tileVal == DoorClosed 
-			|| tileVal == EnemySpawner || tileVal == Objective || tileVal == ObjectiveCollected || tileVal == LevelExit || tileVal == LevelExitOpen)
+		(tileVal == Wall || tileVal == Boss || tileVal == Custom || tileVal == DoorClosed || tileVal == EnemySpawner || tileVal == Objective)
 		) return false; //stopping movement in that axis.
 
 
@@ -1502,8 +1499,7 @@ bool collisionCheck(int direction, float x, float z) {
 	if (
 		(direction == 2)
 		&&
-		(tileVal == Wall || tileVal == Boss || tileVal == Custom || tileVal == DoorClosed 
-			|| tileVal == EnemySpawner || tileVal == Objective || tileVal == ObjectiveCollected || tileVal == LevelExit || tileVal == LevelExitOpen)
+		(tileVal == Wall || tileVal == Boss || tileVal == Custom || tileVal == DoorClosed || tileVal == EnemySpawner || tileVal == Objective)
 		) return false; //stopping movement in that axis.
 
 	return true;
@@ -1602,50 +1598,15 @@ void queueAnimation(int id, int x, int z) {
 
 	switch (tileValue) {
 
-	case LevelExitOpen:
-
-		// render the next level.
-		if (levelQueue.size() == 1) {
-
-			resetSHIBA(RESET_ENGINE);
-			currentScene = 0;
-
-		}
-		else {
-			levelQueue.pop();
-			initLevels(levelQueue);
-			player.objectives = 0;
-		}
-		break;
-
-	case LevelExit:
-		if (player.objectives - player.objectives == levelQueue.front().objectives - player.objectives) {
-
-			target.y = 19.9f;	//door open position.
-
-			// adding to animation queue.
-			animationQueue.insert_or_assign(id, target);
-
-			// update the tile value
-			levelQueue.front().levelGrid[x][z] = LevelExitOpen;
-			objectCollection.at(id).color = LevelExitOpen;
-		}
-		else {
-
-			std::cout << "Don't have all objectives yet." << std::endl;
-		}
-
-		break;
-
 	case Objective:
 
 		player.objectives++;
 
 		// turn objective into an empty tile in the map.
-		levelQueue.front().levelGrid[x][z] = ObjectiveCollected;
+		levelQueue.front().levelGrid[x][z] = Empty;
 
 		// update objectdata
-		objectCollection.at(id).color = ObjectiveCollected;
+		objectCollection.at(id).color = Empty;
 
 
 		if (player.objectives == levelQueue.front().objectives) {
@@ -2129,9 +2090,7 @@ std::queue<ShibaQuad> aStarImplementation(ShibaObject& entity, Position goal, in
 
 			if (tempPos.frontObject != -1 && objectCollection.at(tempPos.frontObject).color != Wall &&
 				objectCollection.at(tempPos.frontObject).color != Boss && objectCollection.at(tempPos.frontObject).color != Objective &&
-				objectCollection.at(tempPos.frontObject).color != EnemySpawner && objectCollection.at(tempPos.frontObject).color != ObjectiveCollected &&
-				objectCollection.at(tempPos.frontObject).color != LevelExit && objectCollection.at(tempPos.frontObject).color != LevelExitOpen)
-
+				objectCollection.at(tempPos.frontObject).color != EnemySpawner)
 				objectIDRange.push_back(tempPos.frontObject);
 
 			tempPos.facing = { i == 0 , i == 1, false, false };
@@ -2146,9 +2105,7 @@ std::queue<ShibaQuad> aStarImplementation(ShibaObject& entity, Position goal, in
 
 				if (tempPos.frontObject != -1 && objectCollection.at(tempPos.frontObject).color != Wall &&
 					objectCollection.at(tempPos.frontObject).color != Boss && objectCollection.at(tempPos.frontObject).color != Objective &&
-					objectCollection.at(tempPos.frontObject).color != EnemySpawner && objectCollection.at(tempPos.frontObject).color != ObjectiveCollected &&
-					objectCollection.at(tempPos.frontObject).color != LevelExit && objectCollection.at(tempPos.frontObject).color != LevelExitOpen)
-
+					objectCollection.at(tempPos.frontObject).color != EnemySpawner)
 					objectIDRange.push_back(tempPos.frontObject);
 
 				tempPos.x = entity.getRawCoords().x;

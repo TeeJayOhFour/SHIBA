@@ -30,27 +30,24 @@ enum AnimID {
 
 	SPLASH_ART_GLOW = 200,
 	SPLASH_BROKEN_GLASS = 201,
-	SplashArt0 = 202,
-	SplashArt1 = 203,
 
 };
 
 enum tileID {
 	Enemy = -5,
 	Player = -4,
+	SplashArt0 = -3,
+	SplashArt1 = -2,
 	SpawnLoc = -1,
 	Empty = 0,
 	EnemySpawner = 1,
 	Objective = 2,
-	ObjectiveCollected = 20,
 	Notes = 3,
 	Wall = 4,
 	DoorClosed = 5,
 	DoorOpen = -5,
 	Boss = 6,
 	Custom = 7,
-	LevelExit = 8,
-	LevelExitOpen = 80,
 	Bullet = 10
 };
 
@@ -319,38 +316,31 @@ struct ShibaQuad {
 static void getColorMod(int id) {
 
 	switch (id) {
-	case SpawnLoc:	//floor: Grey
+	case -1:	//floor: Grey
 		glColor3f(0.5, 0.5, 0.5);
 		break;
-	case Empty:		//spawn points: Purple
+	case 0:		//spawn points: Purple
 		glColor3f(0.6, 0.2, 0.6);
 		break;
-	case EnemySpawner:		//enemy spawner: Red
+	case 1:		//enemy spawner: Red
 		glColor3f(1.0, 0.0, 0.0);
 		break;
-	case Objective:		//Objectives: Blue
+	case 2:		//Objectives: Blue
 		glColor3f(0.0, 0.0, 1.0);
-		break;	
-	case ObjectiveCollected:		//Objectives collected: dark blue
-		glColor3f(0, 0, 0.5);
 		break;
-	case Notes:		//Notes: Cyan
+	case 3:		//Notes: Cyan
 		glColor3f(0.0, 1, 1);
 		break;
-	case Wall:		//Walls : Grey
+	case 4:		//Walls : Grey
 		glColor3f(1.0, 1.0, 1.0);
 		break;
-	case DoorClosed:		//Doors: Yellow
-	case DoorOpen:		//Doors: Yellow
+	case 5:		//Doors: Yellow
 		glColor3f(1.0, 1.0, 0.0);
 		break;
-	case Boss:		//Boss Location: Orange
+	case 6:		//Boss Location: Orange
 		glColor3f(1.0, 0.60, 0.0);
 		break;
-	case LevelExit:	//white
-		glColor3f(1.0, 1.0, 1.0);	
-		break;
-	case Custom:		//Custom 3D model unique to map: Green
+	case 7:		//Custom 3D model unique to map: Green
 		glColor3f(0.0, 1.0, 0.0);
 		break;
 	default:

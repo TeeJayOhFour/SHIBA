@@ -42,15 +42,13 @@ enum tileID {
 	Empty = 0,
 	EnemySpawner = 1,
 	Objective = 2,
-	ObjectiveCollected = 20,
+	objectiveCollected = -2,
 	Notes = 3,
 	Wall = 4,
 	DoorClosed = 5,
 	DoorOpen = -5,
 	Boss = 6,
 	Custom = 7,
-	LevelExit = 8,
-	LevelExitOpen = 80,
 	Bullet = 10
 };
 
@@ -331,8 +329,8 @@ static void getColorMod(int id) {
 	case Objective:		//Objectives: Blue
 		glColor3f(0.0, 0.0, 1.0);
 		break;	
-	case ObjectiveCollected:		//Objectives collected: dark blue
-		glColor3f(0, 0, 0.5);
+	case objectiveCollected:		//Objectives: dark blue
+		glColor3f(0.0, 0.0, 0.5);
 		break;
 	case Notes:		//Notes: Cyan
 		glColor3f(0.0, 1, 1);
@@ -346,9 +344,6 @@ static void getColorMod(int id) {
 		break;
 	case Boss:		//Boss Location: Orange
 		glColor3f(1.0, 0.60, 0.0);
-		break;
-	case LevelExit:	//white
-		glColor3f(1.0, 1.0, 1.0);	
 		break;
 	case Custom:		//Custom 3D model unique to map: Green
 		glColor3f(0.0, 1.0, 0.0);

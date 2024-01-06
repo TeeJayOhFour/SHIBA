@@ -172,8 +172,6 @@ static void texturedCube(float v) {
     glEnd();
 
     glDisable(GL_TEXTURE_2D);
-    glColor3f(0, 0, 0);
-
 }
 
 
@@ -197,6 +195,7 @@ static void Batman(ShibaObject a) {
     glPopMatrix();
 
     // Suit
+    glColor3f(0, 0, 0);
 
     glPushMatrix();
     glTranslatef(0.0, -0.4, 0.0);
@@ -206,6 +205,7 @@ static void Batman(ShibaObject a) {
     glPopMatrix();
 
     // arms
+    glColor3f(0, 0, 0);
 
     glPushMatrix();
     glTranslatef(0.3, -0.2, 0.0);
@@ -214,6 +214,7 @@ static void Batman(ShibaObject a) {
 
     glPopMatrix();
 
+    glColor3f(0, 0, 0);
 
     glPushMatrix();
     glTranslatef(0.34, -0.3, 0.0);
@@ -222,6 +223,7 @@ static void Batman(ShibaObject a) {
 
     glPopMatrix();
 
+    glColor3f(0, 0, 0);
 
     glPushMatrix();
     glTranslatef(0.34, -0.4, 0.0);
@@ -236,7 +238,7 @@ static void Batman(ShibaObject a) {
     texturedCube(0.2 / 2.0);
 
     glPopMatrix();
-
+    glColor3f(0, 0, 0);
 
     glPushMatrix();
     glTranslatef(-0.34, -0.3, 0.0);
@@ -244,7 +246,7 @@ static void Batman(ShibaObject a) {
     texturedCube(0.12 / 2.0);
 
     glPopMatrix();
-
+    glColor3f(0, 0, 0);
 
     glPushMatrix();
     glTranslatef(-0.34, -0.4, 0.0);
@@ -254,7 +256,7 @@ static void Batman(ShibaObject a) {
     glPopMatrix();
 
     // pants
-
+    glColor3f(0, 0, 0);
 
     glPushMatrix();
     glTranslatef(0.1, -0.7, 0.0);
@@ -262,7 +264,7 @@ static void Batman(ShibaObject a) {
     texturedCube(0.15 / 2.0);
 
     glPopMatrix();
-
+    glColor3f(0, 0, 0);
 
     glPushMatrix();
     glTranslatef(0.1, -0.8, 0.0);
@@ -270,7 +272,7 @@ static void Batman(ShibaObject a) {
     texturedCube(0.15 / 2.0);
 
     glPopMatrix();
-
+    glColor3f(0, 0, 0);
 
     glPushMatrix();
     glTranslatef(0.1, -0.9, 0.0);
@@ -278,7 +280,6 @@ static void Batman(ShibaObject a) {
     texturedCube(0.15 / 2.0);
 
     glPopMatrix();
-
 
     glPushMatrix();
     glTranslatef(-0.1, -0.7, 0.0);
@@ -411,7 +412,7 @@ int main(int argc, char** argv) {
     //! TODO Allow shibaobject to handle glutsolids
     ShibaObject custom(0, 0, 0);
 
-    custom.setLoadGlutFunction(Batman);
+    custom.setLoadGlutFunction(drawRocket);
     meow1.customObjects.push_back(custom);
 
 

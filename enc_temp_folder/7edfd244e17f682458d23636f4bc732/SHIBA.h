@@ -867,7 +867,6 @@ void resetSHIBA(int state) {
 		track = false;
 		track ? glutSetCursor(GLUT_CURSOR_NONE) : glutSetCursor(GLUT_CURSOR_INHERIT);
 		PLAYER_HP_MOD = 0;
-		player.objectives = 0;
 
 		
 		initLevels(backupLevelQueue);
@@ -909,7 +908,6 @@ void listenForNormalKeys(unsigned char key, int xx, int yy) {
 		else {
 			levelQueue.pop();
 			initLevels(levelQueue);
-			player.objectives = 0;
 		}
 		break;
 
@@ -1604,22 +1602,13 @@ void queueAnimation(int id, int x, int z) {
 
 	case LevelExitOpen:
 
+		levelQueue.pop();
 		// render the next level.
-		if (levelQueue.size() == 1) {
-
-			resetSHIBA(RESET_ENGINE);
-			currentScene = 0;
-
-		}
-		else {
-			levelQueue.pop();
-			initLevels(levelQueue);
-			player.objectives = 0;
-		}
+		initLevels(levelQueue);
 		break;
 
 	case LevelExit:
-		if (player.objectives - player.objectives == levelQueue.front().objectives - player.objectives) {
+		if (player.objectives == levelQueue.front().objectives) {
 
 			target.y = 19.9f;	//door open position.
 

@@ -163,8 +163,8 @@ void initTextures() {
 	image = SOIL_load_OGL_texture("assets/textures/splash1.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
 	textureCollection.insert_or_assign(SplashArt1, image);	
 	
-	image = SOIL_load_OGL_texture("assets/textures/splash2.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
-	textureCollection.insert_or_assign(SPLASH_BROKEN_GLASS, image);
+	image = SOIL_load_OGL_texture("assets/textures/splash_glow.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(SPLASH_ART_GLOW, image);
 
 	//recursively added enemy textures since they're similar names lol
 	std::string enemyPath = "assets/textures/enemy/";
@@ -236,13 +236,8 @@ static void updateHUD() {
 	// Player health
 	std::string hp = "Health: " + std::to_string(player.health);
 	std::string score = "Kills: " + std::to_string(player.kills);
-	std::string objectivesLeft = "Eggs: " + std::to_string(player.objectives) + "/" + std::to_string(levelQueue.front().objectives);
 
 	glColor3f(1, 1, 1);
-
-
-	glRasterPos2f(25.0f, glutGet(GLUT_WINDOW_HEIGHT) - 150.0f);
-	glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, reinterpret_cast <const unsigned char*> (objectivesLeft.c_str()));
 
 	glRasterPos2f(25.0f, glutGet(GLUT_WINDOW_HEIGHT) - 100.0f);
 	glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, reinterpret_cast <const unsigned char*> (score.c_str()));
@@ -252,13 +247,12 @@ static void updateHUD() {
 	else if (player.health >= 30) glColor3f(1, 1, 0);
 	else glColor3f(1, 0, 0);
 
+
 	glRasterPos2f(25.0f, glutGet(GLUT_WINDOW_HEIGHT) - 50.0f);
 	glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, reinterpret_cast <const unsigned char*> (hp.c_str()));
 
 
-
-
-	// crosshair: let it be a small cube for now.
+	// crosshair let it be a small cube for now.
 
 	glPushMatrix();
 		glColor3f(1, 1, 1);
@@ -484,14 +478,11 @@ void showSplash(int splash) {
 	toggleOverlayMode(true);
 	toggleTransparency(true);
 
-	int delay = 3000;
-	int splashMod = 0;
-	if (splash == SPLASH_BROKEN_GLASS) splashMod = -1.0;
+	float res = 0.5f - (float) animateTex(SPLASH_ART_GLOW, 1000, true) / 1000;
 
-	float res = 0.3f + fabs(0.5f - (float) animateTex(SPLASH_ART_GLOW, delay, true) / delay);
+	std::cout << res << std::endl;
 
-
-	glColor3f(res, splashMod + res, splashMod + res);
+	glColor3f(res, res, res);
 
 	glBindTexture(GL_TEXTURE_2D, textureCollection.at(splash));
 
@@ -534,7 +525,7 @@ void pause() {
 		);
 
 	menuQueue.front().show();
-	showSplash(SPLASH_BROKEN_GLASS);
+	showSplash(SplashArt1);
 
 
 }
@@ -866,11 +857,10 @@ void resetSHIBA(int state) {
 		currentScene = RESET_ENGINE;
 		track = false;
 		track ? glutSetCursor(GLUT_CURSOR_NONE) : glutSetCursor(GLUT_CURSOR_INHERIT);
-		PLAYER_HP_MOD = 0;
-		player.objectives = 0;
 
 		
 		initLevels(backupLevelQueue);
+
 	}
 
 	if (state == GAME_PAUSED) {
@@ -909,7 +899,6 @@ void listenForNormalKeys(unsigned char key, int xx, int yy) {
 		else {
 			levelQueue.pop();
 			initLevels(levelQueue);
-			player.objectives = 0;
 		}
 		break;
 
@@ -1493,8 +1482,7 @@ bool collisionCheck(int direction, float x, float z) {
 	if (
 		(direction == 1)
 		&& //checking if within bounds
-		(tileVal == Wall || tileVal == Boss || tileVal == Custom || tileVal == DoorClosed 
-			|| tileVal == EnemySpawner || tileVal == Objective || tileVal == ObjectiveCollected || tileVal == LevelExit || tileVal == LevelExitOpen)
+		(tileVal == Wall || tileVal == Boss || tileVal == Custom || tileVal == DoorClosed || tileVal == EnemySpawner || tileVal == Objective)
 		) return false; //stopping movement in that axis.
 
 
@@ -1502,8 +1490,7 @@ bool collisionCheck(int direction, float x, float z) {
 	if (
 		(direction == 2)
 		&&
-		(tileVal == Wall || tileVal == Boss || tileVal == Custom || tileVal == DoorClosed 
-			|| tileVal == EnemySpawner || tileVal == Objective || tileVal == ObjectiveCollected || tileVal == LevelExit || tileVal == LevelExitOpen)
+		(tileVal == Wall || tileVal == Boss || tileVal == Custom || tileVal == DoorClosed || tileVal == EnemySpawner || tileVal == Objective)
 		) return false; //stopping movement in that axis.
 
 	return true;
@@ -1602,60 +1589,6 @@ void queueAnimation(int id, int x, int z) {
 
 	switch (tileValue) {
 
-	case LevelExitOpen:
-
-		// render the next level.
-		if (levelQueue.size() == 1) {
-
-			resetSHIBA(RESET_ENGINE);
-			currentScene = 0;
-
-		}
-		else {
-			levelQueue.pop();
-			initLevels(levelQueue);
-			player.objectives = 0;
-		}
-		break;
-
-	case LevelExit:
-		if (player.objectives - player.objectives == levelQueue.front().objectives - player.objectives) {
-
-			target.y = 19.9f;	//door open position.
-
-			// adding to animation queue.
-			animationQueue.insert_or_assign(id, target);
-
-			// update the tile value
-			levelQueue.front().levelGrid[x][z] = LevelExitOpen;
-			objectCollection.at(id).color = LevelExitOpen;
-		}
-		else {
-
-			std::cout << "Don't have all objectives yet." << std::endl;
-		}
-
-		break;
-
-	case Objective:
-
-		player.objectives++;
-
-		// turn objective into an empty tile in the map.
-		levelQueue.front().levelGrid[x][z] = ObjectiveCollected;
-
-		// update objectdata
-		objectCollection.at(id).color = ObjectiveCollected;
-
-
-		if (player.objectives == levelQueue.front().objectives) {
-			//unlock door
-			//boost player stats
-			PLAYER_HP_MOD += 100;
-		}
-
-		break;
-
 	case DoorOpen:
 
 		target.y = 0.0f;	//door open position.
@@ -1670,7 +1603,7 @@ void queueAnimation(int id, int x, int z) {
 		break;
 
 	case EnemySpawner:
-		target.y = -WALLSIZE;	//door open position.
+		target.y = -18.0f;	//door open position.
 
 		// adding to animation queue.
 		animationQueue.insert_or_assign(id, target);
@@ -2129,9 +2062,7 @@ std::queue<ShibaQuad> aStarImplementation(ShibaObject& entity, Position goal, in
 
 			if (tempPos.frontObject != -1 && objectCollection.at(tempPos.frontObject).color != Wall &&
 				objectCollection.at(tempPos.frontObject).color != Boss && objectCollection.at(tempPos.frontObject).color != Objective &&
-				objectCollection.at(tempPos.frontObject).color != EnemySpawner && objectCollection.at(tempPos.frontObject).color != ObjectiveCollected &&
-				objectCollection.at(tempPos.frontObject).color != LevelExit && objectCollection.at(tempPos.frontObject).color != LevelExitOpen)
-
+				objectCollection.at(tempPos.frontObject).color != EnemySpawner)
 				objectIDRange.push_back(tempPos.frontObject);
 
 			tempPos.facing = { i == 0 , i == 1, false, false };
@@ -2146,9 +2077,7 @@ std::queue<ShibaQuad> aStarImplementation(ShibaObject& entity, Position goal, in
 
 				if (tempPos.frontObject != -1 && objectCollection.at(tempPos.frontObject).color != Wall &&
 					objectCollection.at(tempPos.frontObject).color != Boss && objectCollection.at(tempPos.frontObject).color != Objective &&
-					objectCollection.at(tempPos.frontObject).color != EnemySpawner && objectCollection.at(tempPos.frontObject).color != ObjectiveCollected &&
-					objectCollection.at(tempPos.frontObject).color != LevelExit && objectCollection.at(tempPos.frontObject).color != LevelExitOpen)
-
+					objectCollection.at(tempPos.frontObject).color != EnemySpawner)
 					objectIDRange.push_back(tempPos.frontObject);
 
 				tempPos.x = entity.getRawCoords().x;

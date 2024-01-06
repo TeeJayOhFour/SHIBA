@@ -11,62 +11,74 @@ static void drawHuman(ShibaObject a) {
     ShibaQuad center;
     center = a.vertexCol.front();
 
-    glPushMatrix();
-    glTranslatef(center.x + a.offset.x, center.y + a.offset.y + 4.0f, center.z + a.offset.z);
-    glScalef(10, 10, 10);
-
-    // Draw the head
+    //// Draw the head
     glColor3f(1.0, 0.8, 0.6); // Skin color
+
+    glPushMatrix();
+        glTranslatef(
+            center.x + a.offset.x,
+            center.y + a.offset.y,
+            center.z + a.offset.z);
     glutSolidSphere(0.25, 100, 100);
+    glPopMatrix();
 
     // Draw the body
     glColor3f(0.5, 0.5, 1.0); // Blue shirt
+
     glPushMatrix();
-    glTranslatef(0.0, -0.4, 0.0);
+        glTranslatef(
+            center.x + a.offset.x,
+            center.y + a.offset.y - 0.4f,
+            center.z + a.offset.z);
     glutSolidCube(0.4);
     glPopMatrix();
 
     // Draw the arms
     glColor3f(1.0, 0.8, 0.6); // Skin color
     glPushMatrix();
-    glTranslatef(0.5, -0.3, 0.0);
+        glTranslatef(
+            center.x + a.offset.x + 0.5f,
+            center.y + a.offset.y - 0.3f,
+            center.z + a.offset.z
+        );
     glutSolidCube(0.1);
     glPopMatrix();
 
     glPushMatrix();
-    glTranslatef(-0.5, -0.3, 0.0);
+        glTranslatef(
+            center.x + a.offset.x - 0.5f,
+            center.y + a.offset.y - 0.3f,
+            center.z + a.offset.z);
     glutSolidCube(0.1);
     glPopMatrix();
 
     // Draw the legs
     glColor3f(0.0, 0.0, 1.0); // Blue pants
     glPushMatrix();
-    glTranslatef(0.2, -0.8, 0.0);
+        glTranslatef(
+            center.x + a.offset.x + 0.2f,
+            center.y + a.offset.y - 0.8f,
+            center.z + a.offset.z);
     glutSolidCube(0.15);
     glPopMatrix();
 
     glPushMatrix();
-    glTranslatef(-0.2, -0.8, 0.0);
+        glTranslatef(
+            center.x + a.offset.x - 0.2f,
+            center.y + a.offset.y - 0.8f,
+            center.z + a.offset.z);
     glutSolidCube(0.15);
-    glPopMatrix();
-
     glPopMatrix();
 
 }
 
 static void drawRocket(ShibaObject a) {
-    ShibaQuad center;
-    center = a.vertexCol.front();
 
+    ShibaQuad center = a.vertexCol.at(0);
+    center.y = 15;
 
     // Draw Rocket Body
     glPushMatrix();
-    glTranslatef(center.x + a.offset.x, center.y + a.offset.y + 100.0f, center.z + a.offset.z);
-    glScalef(4, 4, 4);
-
-
-    glPushMatrix();
-
 
     GLUquadricObj* rocketBody = gluNewQuadric();
     gluQuadricDrawStyle(rocketBody, GLU_FILL);
@@ -74,20 +86,26 @@ static void drawRocket(ShibaObject a) {
     gluQuadricOrientation(rocketBody, GLU_OUTSIDE);
 
     glColor3f(0.694, 0.694, 0.686);
-    glTranslated(0, -18, 0);
+
+    glTranslated(center.x + 0 + a.offset.x, center.y + a.offset.y + -18, center.z + a.offset.z + 1);
     glRotated(-90, 1, 0, 0);
+    
     gluCylinder(rocketBody, 4.5, 4.5, 30, 32, 32);
 
     // Draw Windows on Rocket Body
     glColor3f(0, 0, 0);
+
     int windows[5] = { -5, -10, -15, -20, -25 };
+
     for (int i = 0; i < 5; i++) {
         glPushMatrix();
-        glRotated(90, 0, 0, 1);
-        glRotated(-90, 1, 0, 0);
-        glTranslated(0, windows[i], 0);
-        glScalef(6.45, 1, 1);
-        glutSolidCube(1.4);
+
+            glRotated(90, 0, 0, 1);
+            glRotated(-90, 1, 0, 0);
+            glTranslated(0, windows[i], 0);
+            glScalef(6.45, 1, 1);
+            glutSolidCube(1.4);
+
         glPopMatrix();
     }
 
@@ -96,7 +114,9 @@ static void drawRocket(ShibaObject a) {
     // Draw Rocket Bottom
     glColor3f(0.564, 0.541, 0.517);
     glPushMatrix();
-    glTranslated(0, -18, 0);
+
+    glTranslated(center.x + 0 + a.offset.x, center.y + a.offset.y + -18, center.z + a.offset.z + 1);
+
     glRotated(-90, 1, 0, 0);
     glutSolidSphere(4.5, 32, 32);
     glPopMatrix();
@@ -104,7 +124,9 @@ static void drawRocket(ShibaObject a) {
     // Draw Rocket Top
     glColor3f(0.6, 0.6, 0.6);
     glPushMatrix();
-    glTranslated(0, 12, 0);
+
+    glTranslated(center.x + 0 + a.offset.x, center.y + a.offset.y + 12, center.z + a.offset.z + 1);
+
     glRotated(-90, 1, 0, 0);
     glutSolidCone(4.5, 10.0, 32, 32);
     glPopMatrix();
@@ -118,7 +140,9 @@ static void drawRocket(ShibaObject a) {
 
     // Draw the right most plate
     glPushMatrix();
-    glTranslated(0, -15.5, 0);
+
+    glTranslated(center.x + 0 + a.offset.x, center.y + a.offset.y + -15.5, center.z + a.offset.z + 1);
+
     glRotatef(45, 0, 1, 0);
     glRotatef(160, 1, 0, 0);
     gluPartialDisk(rocketPlate, 4.5, 18, 10, 5, 0, 30);
@@ -126,7 +150,9 @@ static void drawRocket(ShibaObject a) {
 
     // Draw the back plate
     glPushMatrix();
-    glTranslated(0, -15.5, 0);
+
+    glTranslated(center.x + 0 + a.offset.x, center.y + a.offset.y + -15.5, center.z + a.offset.z + 1);
+
     glRotatef(160, 1, 0, 0);
     glRotatef(-90, 0, 1, 0);
     gluPartialDisk(rocketPlate, 4.5, 18, 10, 5, 0, 30);
@@ -134,171 +160,110 @@ static void drawRocket(ShibaObject a) {
 
     // Draw the left most plate
     glPushMatrix();
-    glTranslated(0, -15.5, 0);
+
+    glTranslated(center.x + 0 + a.offset.x, center.y + a.offset.y + -15.5, center.z + a.offset.z + 1);
+
     glRotatef(225, 0, 1, 0);
     glRotatef(160, 1, 0, 0);
     gluPartialDisk(rocketPlate, 4.5, 18, 10, 5, 0, 30);
     glPopMatrix();
-    glPopMatrix();
 
 }
-
-
-static void texturedCube(float v) {
-
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, textureCollection.at(BOUNDARY));
-
-    // setting texture to repeat
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-
-    glBegin(GL_QUADS);
-    glNormal3f(0, 1.0f, 0);
-    glColor3f(1, 1, 1);
-
-    glTexCoord2f(0.0, 0.0);
-    glVertex3f(0 - v, 0 - v, v + 0.01);
-
-    glTexCoord2f(1.0, 0.0);
-    glVertex3f(0 + v, 0 - v, v + 0.01);
-
-    glTexCoord2f(1.0, 1.0);
-    glVertex3f(0 + v, v, v + 0.01);
-
-    glTexCoord2f(0.0, 1.0);
-    glVertex3f(0 - v, v, v + 0.01);
-
-    glEnd();
-
-    glDisable(GL_TEXTURE_2D);
-    glColor3f(0, 0, 0);
-
-}
-
 
 static void Batman(ShibaObject a) {
 
     ShibaQuad center = a.vertexCol.at(0);
-    int scaleFactor = 7.0;
-
-    glPushMatrix();
-
-    glTranslatef(center.x + a.offset.y, center.y + a.offset.y+2.0f, center.z + a.offset.z);
-    glScalef(scaleFactor, scaleFactor, scaleFactor);
-
-
+    int scaleFactor = 3;
     // Cowl
-    glColor3f(0, 0, 0);
+    glColor3f(1, 0, 0);
     glPushMatrix();
-        glTranslatef(0.0, 0.0, 0.0);
-        glutSolidCube(0.4);
-        texturedCube(0.4/2.0);
+    glScalef(scaleFactor, scaleFactor, scaleFactor);
+    glTranslatef(center.x + a.offset.x + 0.0, 0.0 + center.y + a.offset.y, center.z + a.offset.z + 0.0);
+    glutSolidCube(0.4);
     glPopMatrix();
 
+
     // Suit
-
+    glColor3f(0, 1, 0);
     glPushMatrix();
-    glTranslatef(0.0, -0.4, 0.0);
+    glScalef(scaleFactor, scaleFactor, scaleFactor);
+    glTranslatef(center.x + a.offset.x + 0.0, -0.4 + center.y + a.offset.y, center.z + a.offset.z + 0.0);
     glutSolidCube(0.5);
-    texturedCube(0.5 / 2.0);
-
     glPopMatrix();
 
     // arms
-
+    glColor3f(0.4, 0, 0);
     glPushMatrix();
-    glTranslatef(0.3, -0.2, 0.0);
+    glScalef(scaleFactor, scaleFactor, scaleFactor);
+    glTranslatef(center.x + a.offset.x + 0.3, -0.2 + center.y + a.offset.y, center.z + a.offset.z + 0.0);
     glutSolidCube(0.2);
-    texturedCube(0.2 / 2.0);
 
     glPopMatrix();
-
-
+    glColor3f(0.4, 0, 0);
     glPushMatrix();
-    glTranslatef(0.34, -0.3, 0.0);
+    glScalef(scaleFactor, scaleFactor, scaleFactor);
+    glTranslatef(center.x + a.offset.x + 0.34, -0.3 + center.y + a.offset.y, center.z + a.offset.z + 0.0);
     glutSolidCube(0.12);
-    texturedCube(0.12 / 2.0);
-
     glPopMatrix();
-
-
+    glColor3f(0.4, 0, 0);
     glPushMatrix();
-    glTranslatef(0.34, -0.4, 0.0);
+    glScalef(scaleFactor, scaleFactor, scaleFactor);
+    glTranslatef(center.x + a.offset.x + 0.34, -0.4 + center.y + a.offset.y, center.z + a.offset.z + 0.0);
     glutSolidCube(0.12);
-    texturedCube(0.12 / 2.0);
-
     glPopMatrix();
 
     glPushMatrix();
-    glTranslatef(-0.3, -0.2, 0.0);
+    glScalef(scaleFactor, scaleFactor, scaleFactor);
+    glTranslatef(center.x + a.offset.x + -0.3, -0.2 + center.y + a.offset.y, center.z + a.offset.z + 0.0);
     glutSolidCube(0.2);
-    texturedCube(0.2 / 2.0);
-
     glPopMatrix();
-
-
+    glColor3f(0.4, 0, 0);
     glPushMatrix();
-    glTranslatef(-0.34, -0.3, 0.0);
+    glScalef(scaleFactor, scaleFactor, scaleFactor);
+    glTranslatef(center.x + a.offset.x + -0.34, -0.3 + center.y + a.offset.y, center.z + a.offset.z + 0.0);
     glutSolidCube(0.12);
-    texturedCube(0.12 / 2.0);
-
     glPopMatrix();
-
-
+    glColor3f(0.4, 0, 0);
     glPushMatrix();
-    glTranslatef(-0.34, -0.4, 0.0);
+    glScalef(scaleFactor, scaleFactor, scaleFactor);
+    glTranslatef(center.x + a.offset.x + -0.34, -0.4 + center.y + a.offset.y, center.z + a.offset.z + 0.0);
     glutSolidCube(0.12);
-    texturedCube(0.12 / 2.0);
-
     glPopMatrix();
 
     // pants
-
-
+    glColor3f(0.0, 0.0, 1.0);
     glPushMatrix();
-    glTranslatef(0.1, -0.7, 0.0);
+    glScalef(scaleFactor, scaleFactor, scaleFactor);
+    glTranslatef(center.x + a.offset.x + 0.1, -0.7 + center.y + a.offset.y, center.z + a.offset.z + 0.0);
     glutSolidCube(0.15);
-    texturedCube(0.15 / 2.0);
-
+    glPopMatrix();
+    glColor3f(0.0, 0.0, 1.0);
+    glPushMatrix();
+    glScalef(scaleFactor, scaleFactor, scaleFactor);
+    glTranslatef(center.x + a.offset.x + 0.1, -0.8 + center.y + a.offset.y, center.z + a.offset.z + 0.0);
+    glutSolidCube(0.15);
+    glPopMatrix();
+    glColor3f(0.0, 0.0, 1.0);
+    glPushMatrix();
+    glScalef(scaleFactor, scaleFactor, scaleFactor);
+    glTranslatef(center.x + a.offset.x + 0.1, -0.9 + center.y + a.offset.y, center.z + a.offset.z + 0.0);
+    glutSolidCube(0.15);
     glPopMatrix();
 
-
     glPushMatrix();
-    glTranslatef(0.1, -0.8, 0.0);
+    glScalef(scaleFactor, scaleFactor, scaleFactor);
+    glTranslatef(center.x + a.offset.x + -0.1, -0.7 + center.y + a.offset.y, center.z + a.offset.z + 0.0);
     glutSolidCube(0.15);
-    texturedCube(0.15 / 2.0);
-
-    glPopMatrix();
-
-
-    glPushMatrix();
-    glTranslatef(0.1, -0.9, 0.0);
-    glutSolidCube(0.15);
-    texturedCube(0.15 / 2.0);
-
-    glPopMatrix();
-
-
-    glPushMatrix();
-    glTranslatef(-0.1, -0.7, 0.0);
-    glutSolidCube(0.15);
-    texturedCube(0.15 / 2.0);
-
     glPopMatrix();
     glPushMatrix();
-    glTranslatef(-0.1, -0.8, 0.0);
+    glScalef(scaleFactor, scaleFactor, scaleFactor);
+    glTranslatef(center.x + a.offset.x + -0.1, -0.8 + center.y + a.offset.y, center.z + a.offset.z + 0.0);
     glutSolidCube(0.15);
-    texturedCube(0.15 / 2.0);
-
     glPopMatrix();
     glPushMatrix();
-    glTranslatef(-0.1, -0.9, 0.0);
+    glScalef(scaleFactor, scaleFactor, scaleFactor);
+    glTranslatef(center.x + a.offset.x + -0.1, -0.9 + center.y + a.offset.y, center.z + a.offset.z + 0.0);
     glutSolidCube(0.15);
-    texturedCube(0.15 / 2.0);
-
-    glPopMatrix();
-
     glPopMatrix();
 
 }
@@ -324,7 +289,7 @@ int main(int argc, char** argv) {
         {4, 4, 4, 4, 4, 5, 4, 0, 0, 0, 4, 0, 0, 4, 5, 4, 4, 4, 4, 4},
         {4, 4, 4, 4, 4, 0, 4, 0, 0, 0, 4, 0, 0, 4, 0, 0, 0, 0, 0, 4},
         {4, 4, 4, 4, 4, 0, 4, 4, 4, 0, 4, 0, 0, 4, 0, 0, 1, 0, 0, 4},
-        {4, 7, 0, 0, 0, 0, -1, 1, 4, 0, 4, 0, 0, 4, 0, 0, 0, 0, 2, 4},
+        {4, 0, 0, 0, 0, 0, -1, 1, 4, 0, 4, 0, 0, 4, 0, 0, 0, 0, 2, 4},
         {4, 1, 3, 4, 4, 4, 4, 4, 4, 0, 4, 1, 3, 4, 0, 0, 0, 0, 1, 4},
         {4, 4, 4, 4, 4, 4, 4, 4, 4, -1, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4},
     };
@@ -355,15 +320,15 @@ int main(int argc, char** argv) {
     int L5Map[20][20] = {
         {1, 4, 4, 4, 4, 4, 4, 4, 4, 0, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2},
         {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 0, 8},
+        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8},
         {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
         {0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
         {0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
         {0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
         {0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
         {0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 8, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+        {0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+        {0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0},
         {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
         {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
         {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -409,18 +374,10 @@ int main(int argc, char** argv) {
 
 
     //! TODO Allow shibaobject to handle glutsolids
-    ShibaObject custom(0, 0, 0);
-
-    custom.setLoadGlutFunction(Batman);
-    meow1.customObjects.push_back(custom);
-
-
-    custom.setLoadGlutFunction(drawHuman);
-    meow2.customObjects.push_back(custom);    
-    
-    custom.setLoadGlutFunction(Batman);
-    meow4.customObjects.push_back(custom);
-
+    ShibaObject zaki(0, 0, 0);
+    zaki.offset.x = -7.5;
+    zaki.setLoadGlutFunction(Batman);
+     meow1.customObjects.push_back(zaki);
 
     // batman.setLoadGlutFunction(&kyakya);
     // batman.loadGlutSolids();

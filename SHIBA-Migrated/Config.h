@@ -44,6 +44,8 @@ constexpr auto PLAYER_DAMAGE = 90;
 constexpr auto BULLET_PIERCING = false;
 constexpr auto PLAYER_HP = 100;
 
+static int PLAYER_HP_MOD = 0;
+
 constexpr auto RANGED_ENEMY_DETECTION_RANGE = 1;
 
 
