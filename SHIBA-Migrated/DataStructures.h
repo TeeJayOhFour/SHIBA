@@ -10,15 +10,19 @@ struct Motion {
 
 };
 
+
 enum gameState {
 	GAME_OVER = -1,
 	RESET_ENGINE = 0,
 	GAME_FINISHED = 1,
 	GAME_OPTIONS = 2,
-	GAME_PAUSED = 3
+	GAME_PAUSED = 3,
+	GAME_EXIT = 4
 };
 
 enum AnimID {
+
+	SHIBA_SPLASH = 420,
 
 	// Enemy texture ids
 	ENEMY_IDLE_STATE_0 = 100,
@@ -33,9 +37,42 @@ enum AnimID {
 	SplashArt0 = 202,
 	SplashArt1 = 203,
 
+	SPAWNER_1 = 301,
+	SPAWNER_2 = 302,
+	SPAWNER_3 = 303,
+
+	EARTH = 400,
+	BLACK_HOLE = 401,
+	MOON = 402,
+
+	HUD_0 = 500,
+	HUD_1 = 501,
+	HUD_2 = 502,
+
+	COWL = 510,
+	ARML = 511,
+	ARMR = 512,
+	BLEGL = 513,
+	BLEGR = 514,
+	BOOTL = 515,
+	BOOTR = 516,
+	HANDL = 517,
+	HANDR = 518,
+	SHOULDERL = 519,
+	SHOULDERR = 520,
+	SUIT = 521,
+	UPLEGL = 522,
+	UPLEGR = 523,
+
 };
 
 enum tileID {
+	BARRIER = 9,
+	CEILING = 68,
+	BOUNDARY = 69,
+	FLOOR_0 = 70,
+	FLOOR_1 = 71,
+	FLOOR_2 = 72,
 	Enemy = -5,
 	Player = -4,
 	SpawnLoc = -1,
@@ -45,6 +82,9 @@ enum tileID {
 	ObjectiveCollected = 20,
 	Notes = 3,
 	Wall = 4,
+	Wall_1 = 40,
+	Wall_2 = 41,
+	Wall_3 = 43,
 	DoorClosed = 5,
 	DoorOpen = -5,
 	Boss = 6,
@@ -353,6 +393,7 @@ static void getColorMod(int id) {
 	case Custom:		//Custom 3D model unique to map: Green
 		glColor3f(0.0, 1.0, 0.0);
 		break;
+	
 	default:
 		glColor3f(0.0, 0.0, 0.0);
 		break;
@@ -444,17 +485,20 @@ public:
 		if (!texture) getColorMod(abs(this->color));
 		else glColor3f(1, 1, 1);
 		int vertexCount = 0;
+		int gap = 0.1f;
 
+		//	objects are drawn CCW and have 4 points
+		//	when vertexcount = 0 or 2 -> going right or left (slices)
+		//	when vertex count = 1 or 3 -> going up or down (stacks)
+	
 		// loop through each vertex collection.
 		if (!vertexCol.empty())
 			for (int v = 0; v < this->vertexCol.size(); v++) {
 
 				if (vertexCount == 4) vertexCount = 0;
 
-				glTexCoord2f(texturePoints.at(vertexCount).x, texturePoints.at(vertexCount).y);
-				vertexCount++;
-
 				// Setting texture pinning points
+				glTexCoord2f(texturePoints.at(vertexCount).x, texturePoints.at(vertexCount).y);
 
 				// setting normals
 				glNormal3f(
@@ -468,6 +512,49 @@ public:
 					this->vertexCol.at(v).y + this->offset.y,
 					this->vertexCol.at(v).z + this->offset.z
 				);
+
+				//// adding slices towards the right.
+				//if (vertexCount == 0) for (int slices = 0; slices < TILE_SLICES; slices++) {
+				//
+				//	glVertex3f(
+				//		this->vertexCol.at(v).x + 0.01f + this->offset.x,
+				//		this->vertexCol.at(v).y + this->offset.y,
+				//		this->vertexCol.at(v).z + this->offset.z
+				//	);
+				//
+				//}
+				//// adding slices towards the left.
+				//if (vertexCount == 2) for (int slices = 0; slices < TILE_SLICES; slices++) {
+
+				//	glVertex3f(
+				//		this->vertexCol.at(v).x - 0.01f + this->offset.x,
+				//		this->vertexCol.at(v).y + this->offset.y,
+				//		this->vertexCol.at(v).z + this->offset.z
+				//	);
+
+				//}
+				//// adding slices towards the top.
+				//if (vertexCount == 1) for (int stacks = 0; stacks < TILE_STACKS; stacks++) {
+
+				//	glVertex3f(
+				//		this->vertexCol.at(v).x + this->offset.x,
+				//		this->vertexCol.at(v).y + 0.01f + this->offset.y,
+				//		this->vertexCol.at(v).z + this->offset.z
+				//	);
+
+				//}
+				//// adding slices towards the bottom.
+				//if (vertexCount == 3) for (int stacks = 0; stacks < TILE_STACKS; stacks++) {
+
+				//	glVertex3f(
+				//		this->vertexCol.at(v).x + this->offset.x,
+				//		this->vertexCol.at(v).y - 0.01f + this->offset.y,
+				//		this->vertexCol.at(v).z + this->offset.z
+				//	);
+
+				//}
+
+				vertexCount++;
 			}
 
 		glEnd();

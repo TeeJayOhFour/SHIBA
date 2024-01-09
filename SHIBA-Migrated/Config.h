@@ -33,20 +33,27 @@ constexpr auto WALLSIZE = 30.0f;	//should be 20
 constexpr auto GROUNDLEVEL = -5.0f;
 constexpr auto TO_RADIANS = 3.141592 / 180.0;
 constexpr auto ANIMATIONSTEP = 10.0f;		//Higher value is slower/smoother;
-constexpr auto BOUNDARY = 69;
-constexpr auto FLOOR = 70;
+
 constexpr auto TRAVEL = 300;
 constexpr auto WIDTH = 16*80;
 constexpr auto HEIGHT = 9*80;
 
 
-constexpr auto PLAYER_DAMAGE = 90;
+constexpr auto PLAYER_DAMAGE = 20;
 constexpr auto BULLET_PIERCING = false;
 constexpr auto PLAYER_HP = 100;
 
 static int PLAYER_HP_MOD = 0;
+static int PLAYER_DMG_MOD = 0;
+static int ENEMY_SPAWN_MOD = 1;
 
 constexpr auto RANGED_ENEMY_DETECTION_RANGE = 1;
+
+
+constexpr auto TILE_SLICES = 5;
+constexpr auto TILE_STACKS = 5;
+
+
 
 
 static float mouseSpeed = SENSITIVITY_MID;

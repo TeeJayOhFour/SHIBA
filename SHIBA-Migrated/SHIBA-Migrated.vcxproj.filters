@@ -21,6 +21,9 @@
     <ClCompile Include="DataStructures.h">
       <Filter>Header Files</Filter>
     </ClCompile>
+    <ClCompile Include="Lore.cpp">
+      <Filter>Header Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SHIBA.h">

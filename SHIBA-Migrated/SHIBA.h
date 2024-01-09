@@ -2,7 +2,7 @@
 
 #include "Config.h"
 #include "DataStructures.h"
-
+#include "Lore.cpp"
 // Globals
 //Player navigation info
 
@@ -10,13 +10,14 @@ struct Position crosshair;
 std::queue <Level> levelQueue;
 std::queue <Level> backupLevelQueue;
 std::queue <Menu> menuQueue;
+
+std::unordered_map <int, Menu> menuCol;
 std::queue <std::string> debugInfoQueue;
 Position cameraPosition;	//camera cords
 
 Entity player(cameraPosition);	//incorporate this throughout the whole code. remove cameraPostion
 
 //? OR just add convert the camera into a ShibaObject.
-int enemyStates = 1;
 
 Position levelBounds;
 std::vector <Position> possibleSpawns;
@@ -33,14 +34,15 @@ std::unordered_map <std::string, ShibaObject> bulletMap;
 
 bool levelSpawning = false;
 bool playerInCombat = false;
-
+bool launched = false;
 
 irrklang::ISound* combatMusic = soundEngine->play2D(BATTLE_MUSIC_0, false, true, true);
 
-
 // Prototypes
+void eggModel(ShibaObject a);
 void menu();
 void draw();
+void notesModel(ShibaObject a);
 void camera();
 void lighting();
 void devScreen();
@@ -113,7 +115,7 @@ void initMenu() {
 
 
 	menuOptions.push_back({ "FULLSCREEN", TOGGLE_BUTTON, 0 });			//off by default
-	menuOptions.push_back({ "SHOW BLOOD", TOGGLE_BUTTON, 1 });			//on by default
+	//menuOptions.push_back({ "SHOW BLOOD", TOGGLE_BUTTON, 1 });			//on by default
 	menuOptions.push_back({ "[LEFT CLICK]  for decrements", TEXT });	
 	menuOptions.push_back({ "[RIGHT CLICK] for increments", TEXT });	
 
@@ -122,8 +124,17 @@ void initMenu() {
 	Options.setHandler(handleOptionInteraction);
 	Options.options = menuOptions;
 
-	menuQueue.push(Main);
-	menuQueue.push(Options);
+	menuOptions.clear();
+
+	Menu Exit(100, 150, crosshair);
+
+	Menu noteMenu(100, 300, crosshair);
+
+	menuCol.insert_or_assign(RESET_ENGINE, Main);
+	menuCol.insert_or_assign(GAME_OPTIONS, Options);
+	menuCol.insert_or_assign(GAME_EXIT, Exit);
+	menuCol.insert_or_assign(Notes, noteMenu);
+
 
 }
 
@@ -138,24 +149,56 @@ void initTextures() {
 	// Adding ID in collection. 
 	textureCollection.insert_or_assign(BOUNDARY, image);
 
-	//Image* image = loadTexture("assets/textures/wall.bmp");
-	//parseTexture(image, BOUNDARY);
+	image = SOIL_load_OGL_texture("assets/textures/tiles/barrier.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(BARRIER, image);
 
-	image = SOIL_load_OGL_texture("assets/textures/floor.bmp", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	image = SOIL_load_OGL_texture("assets/textures/tiles/floor_0.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
 	textureCollection.insert_or_assign(Empty, image);
 
+	image = SOIL_load_OGL_texture("assets/textures/notes_top.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(Notes, image);
 
-	image = SOIL_load_OGL_texture("assets/textures/tileWall.bmp", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	image = SOIL_load_OGL_texture("assets/textures/HUD/0.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(HUD_0, image);
+
+	image = SOIL_load_OGL_texture("assets/textures/tiles/ceiling_0.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(CEILING, image);
+
+	image = SOIL_load_OGL_texture("assets/textures/engine.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(SHIBA_SPLASH, image);
+
+	image = SOIL_load_OGL_texture("assets/textures/earth.jpg", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(EARTH, image);
+
+	image = SOIL_load_OGL_texture("assets/textures/blackhole.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(BLACK_HOLE, image);
+
+	image = SOIL_load_OGL_texture("assets/textures/moon.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(MOON, image);
+
+	image = SOIL_load_OGL_texture("assets/textures/tiles/wall_0.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
 	textureCollection.insert_or_assign(Wall, image);
+	image = SOIL_load_OGL_texture("assets/textures/tiles/wall_1.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(Wall_1, image);
+	image = SOIL_load_OGL_texture("assets/textures/tiles/wall_2.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(Wall_2, image);
+	image = SOIL_load_OGL_texture("assets/textures/tiles/wall_3.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(Wall_3, image);
 
-
-	image = SOIL_load_OGL_texture("assets/textures/door.bmp", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	image = SOIL_load_OGL_texture("assets/textures/tiles/door_regular.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
 	textureCollection.insert_or_assign(DoorClosed, image);
 
+	image = SOIL_load_OGL_texture("assets/textures/tiles/door_locked.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(LevelExit, image);
 
-	image = SOIL_load_OGL_texture("assets/textures/enemy1.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
-	textureCollection.insert_or_assign(Enemy, image);
+	image = SOIL_load_OGL_texture("assets/textures/tiles/door_unlocked.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(LevelExitOpen, image);
 
+	image = SOIL_load_OGL_texture("assets/textures/egg_2d_0.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(Objective, image);
+
+	image = SOIL_load_OGL_texture("assets/textures/egg_2d_1.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(ObjectiveCollected, image);
 
 	image = SOIL_load_OGL_texture("assets/textures/splash0.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
 	textureCollection.insert_or_assign(SplashArt0, image);
@@ -177,8 +220,60 @@ void initTextures() {
 
 
 	}
-	
 
+	image = SOIL_load_OGL_texture("assets/textures/enemy/spawner0.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(EnemySpawner, image);
+
+	image = SOIL_load_OGL_texture("assets/textures/enemy/spawner1.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(SPAWNER_1, image);
+
+	image = SOIL_load_OGL_texture("assets/textures/enemy/spawner2.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(SPAWNER_2, image);
+
+	image = SOIL_load_OGL_texture("assets/textures/enemy/spawner3.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(SPAWNER_3, image);
+
+	image = SOIL_load_OGL_texture("assets/textures/custom/BatmanCowl.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(COWL, image);
+
+	image = SOIL_load_OGL_texture("assets/textures/custom/ArmL.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(ARML, image);
+
+	image = SOIL_load_OGL_texture("assets/textures/custom/ArmR.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(ARMR, image);
+
+	image = SOIL_load_OGL_texture("assets/textures/custom/BLegL.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(BLEGL, image);
+
+	image = SOIL_load_OGL_texture("assets/textures/custom/BLegR.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(BLEGR, image);
+
+	image = SOIL_load_OGL_texture("assets/textures/custom/BootL.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(BOOTL, image);
+
+	image = SOIL_load_OGL_texture("assets/textures/custom/BootR.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(BOOTR, image);
+
+	image = SOIL_load_OGL_texture("assets/textures/custom/HandL.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(HANDL, image);
+
+	image = SOIL_load_OGL_texture("assets/textures/custom/HandR.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(HANDR, image);
+
+	image = SOIL_load_OGL_texture("assets/textures/custom/ShoulderL.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(SHOULDERL, image);
+
+	image = SOIL_load_OGL_texture("assets/textures/custom/ShoulderR.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(SHOULDERR, image);
+
+	image = SOIL_load_OGL_texture("assets/textures/custom/Suit.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(SUIT, image);
+
+	image = SOIL_load_OGL_texture("assets/textures/custom/UpLegL.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(UPLEGL, image);
+
+	image = SOIL_load_OGL_texture("assets/textures/custom/UpLegR.png", SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_NTSC_SAFE_RGB);
+	textureCollection.insert_or_assign(UPLEGR, image);
 }
 
 static void initGLFlags() {
@@ -203,7 +298,7 @@ static void updateHUD() {
 	toggleOverlayMode(true);
 	toggleTransparency(true);
 
-	std::string text = "Press E to interact";
+	std::string text = "";
 	int x = glutGet(GLUT_WINDOW_WIDTH) / 2 - (text.length() / 2) * 6 - 30, y = glutGet(GLUT_WINDOW_HEIGHT) / 2 - 200;
 	int idInFront;
 
@@ -212,8 +307,43 @@ static void updateHUD() {
 	}
 	else idInFront = objectCollection.at(cameraPosition.frontObject).color;
 
+
+	switch (idInFront) {
+		case Custom:
+			if (levelQueue.front().name != "Level 1") break;
+		case DoorClosed:
+		case DoorOpen:
+		case Notes:
+			text = "Press E to interact";
+			break;
+		case EnemySpawner:
+		case SPAWNER_1:
+		case SPAWNER_2:
+		case SPAWNER_3:
+
+			if (objectCollection.at(cameraPosition.frontObject).health > 0) {
+				text = "Press E to destroy";
+			}
+
+			break;
+		case Objective:
+			text = "Press E to consume";
+			break;
+
+		case LevelExit:
+			if (player.objectives - player.objectives != levelQueue.front().objectives - player.objectives) text = "This door is locked";
+			else text = "Press E to interact";
+			break;
+
+		case LevelExitOpen:
+			text = "Press E to proceed";
+			break;
+	}
+
+
 	// HUD elements go here
-	if (idInFront == DoorClosed || idInFront == DoorOpen) {
+	if (!text.empty()) {
+
 		glColor3f(1, 1, 0);
 		glRasterPos2f(x, y);
 
@@ -224,18 +354,18 @@ static void updateHUD() {
 		glBegin(GL_QUADS);
 
 			glNormal3f(0, 0, 0);
-			glVertex2f(x - 5, y - 5);
-			glVertex2f(x + (float)(text.length() * 7) + 22, y - 5);
-			glVertex2f(x + (float)(text.length() * 7) + 22, y + 20);
-			glVertex2f(x - 5, y + 20);
+			glVertex2f(x - 10, y - 5);
+			glVertex2f(x + (float)(text.length() * 8) + 22, y - 5);
+			glVertex2f(x + (float)(text.length() * 8) + 22, y + 20);
+			glVertex2f(x - 10, y + 20);
 
 		glEnd();
 
 	}
 
 	// Player health
-	std::string hp = "Health: " + std::to_string(player.health);
-	std::string score = "Kills: " + std::to_string(player.kills);
+	//std::string hp = "Health: " + std::to_string(player.health);
+	//std::string score = "Kills: " + std::to_string(player.kills);
 	std::string objectivesLeft = "Eggs: " + std::to_string(player.objectives) + "/" + std::to_string(levelQueue.front().objectives);
 
 	glColor3f(1, 1, 1);
@@ -244,17 +374,30 @@ static void updateHUD() {
 	glRasterPos2f(25.0f, glutGet(GLUT_WINDOW_HEIGHT) - 150.0f);
 	glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, reinterpret_cast <const unsigned char*> (objectivesLeft.c_str()));
 
-	glRasterPos2f(25.0f, glutGet(GLUT_WINDOW_HEIGHT) - 100.0f);
-	glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, reinterpret_cast <const unsigned char*> (score.c_str()));
+	//glRasterPos2f(25.0f, glutGet(GLUT_WINDOW_HEIGHT) - 100.0f);
+	//glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, reinterpret_cast <const unsigned char*> (score.c_str()));
 
 
-	if (player.health >= 70) glColor3f(0, 1, 0);
-	else if (player.health >= 30) glColor3f(1, 1, 0);
-	else glColor3f(1, 0, 0);
+	if (player.health >= 70) glColor4f(0, .5, 0, .6);
+	else if (player.health >= 30) glColor4f(.5, .5, 0, .6);
+	else glColor4f(.5, 0, 0, .6);
+	float xMod = (float) player.health / 100.0f;
+	float hpY = glutGet(GLUT_WINDOW_HEIGHT) - 100.0f;
 
-	glRasterPos2f(25.0f, glutGet(GLUT_WINDOW_HEIGHT) - 50.0f);
-	glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, reinterpret_cast <const unsigned char*> (hp.c_str()));
 
+	glBegin(GL_QUADS);
+
+		glNormal3f(0, -1, 0);
+
+		glVertex2f(62, hpY);
+
+		glVertex2f(369 * xMod, hpY);
+
+		glVertex2f(369 * xMod, hpY + 20.0f);
+
+		glVertex2f(62, hpY + 20.0f);
+
+	glEnd();
 
 
 
@@ -265,6 +408,37 @@ static void updateHUD() {
 		glTranslatef(glutGet(GLUT_WINDOW_WIDTH)/2.0f, glutGet(GLUT_WINDOW_HEIGHT)/2.0f, 1);
 		glutWireCube(2);
 	glPopMatrix();
+
+	// HUD Texture
+	glBindTexture(GL_TEXTURE_2D, textureCollection.at(HUD_0));
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	glEnable(GL_TEXTURE_2D);
+
+	glColor4f(1, 1, 1, 1);
+	glBegin(GL_QUADS);
+
+	glNormal3f(0, -1, 0);
+
+		glTexCoord2f(0.0, 1.0);
+		glVertex2f(0, 0);
+
+		glTexCoord2f(1.0, 1.0);
+		glVertex2f(glutGet(GLUT_WINDOW_WIDTH), 0);
+		
+		glTexCoord2f(1.0, 0.0);
+		glVertex2f(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
+		
+		glTexCoord2f(0.0, 0.0);
+		glVertex2f(0, glutGet(GLUT_WINDOW_HEIGHT));
+
+	glEnd();
+
+	glDisable(GL_TEXTURE);
+
+
+
+
 	
 	toggleOverlayMode(false);
 	toggleTransparency(false);
@@ -437,22 +611,75 @@ void idleLoop(int) {
 	glutTimerFunc(1000 / FPS, idleLoop, 0);
 }
 
+void engineLogo() {
+
+	if (launched) return;
+
+
+	toggleOverlayMode(true);
+	toggleTransparency(true);
+
+		int delay = 2000;
+		int anim = animateTex(SHIBA_SPLASH, delay, true);
+		if (anim == 1) launched = true;
+		float res = fabs((float) anim / delay);
+			
+		glColor3f(res, res, res);
+
+		glBindTexture(GL_TEXTURE_2D, textureCollection.at(SHIBA_SPLASH));
+
+		// setting texture to repeat
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+		glEnable(GL_TEXTURE_2D);
+
+		glBegin(GL_QUADS);
+
+			glNormal3f(0, -1, 0);
+
+			glTexCoord2f(0.0, 1.0);
+			glVertex2f(0, 0);
+
+			glTexCoord2f(1.0, 1.0);
+			glVertex2f(glutGet(GLUT_WINDOW_WIDTH), 0);
+
+			glTexCoord2f(1.0, 0.0);
+			glVertex2f(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
+
+			glTexCoord2f(0.0, 0.0);
+			glVertex2f(0, glutGet(GLUT_WINDOW_HEIGHT));
+
+		glEnd();
+
+		glDisable(GL_TEXTURE);
+
+
+	toggleTransparency(false);
+	toggleOverlayMode(false);
+
+}
+
 void renderScene(void) {
+
 
 	lighting();
 
 	// mouse tracking
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glClearColor(1, 1, 1, 1);
+	glClearColor(0, 0, 0, 0);
 	glLoadIdentity();
 	glMatrixMode(GL_MODELVIEW);
 	glDisable(GL_TEXTURE_2D);
+
+	// Rendering SHIBA logo and stuff once.
+	engineLogo();
 
 	// Any number is releated to a menu Scene. -1 indicates the game has started.
 	if (currentScene >= 0)
 		switch (currentScene) {
 			// case 0 should be pause.
 			case RESET_ENGINE:
+			case GAME_OPTIONS:
 				menu();
 				break;
 			case GAME_PAUSED:
@@ -479,6 +706,44 @@ void renderScene(void) {
 
 }
 
+static void texturedCube(float v, int texID = -1) {
+	toggleTransparency(true);
+
+	glEnable(GL_TEXTURE_2D);
+
+	if (texID == -1)
+		glBindTexture(GL_TEXTURE_2D, textureCollection.at(COWL));
+	else 
+		glBindTexture(GL_TEXTURE_2D, textureCollection.at(texID));
+
+	// setting texture to repeat
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+	glBegin(GL_QUADS);
+		glNormal3f(0, 1.0f, 0);
+		glColor3f(1, 1, 1);
+
+		glTexCoord2f(0.0, 1.0);
+		glVertex3f(0 - v, 0 - v, v + 0.05);
+
+		glTexCoord2f(1.0, 1.0);
+		glVertex3f(0 + v, 0 - v, v + 0.05);
+
+		glTexCoord2f(1.0, 0.0);
+		glVertex3f(0 + v, v, v + 0.05);
+
+		glTexCoord2f(0.0, 0.0);
+		glVertex3f(0 - v, v, v + 0.05);
+
+	glEnd();
+
+	glDisable(GL_TEXTURE_2D);
+	glColor3f(0, 0, 0);
+	toggleTransparency(false);
+
+}
+
 void showSplash(int splash) {
 
 	toggleOverlayMode(true);
@@ -486,7 +751,7 @@ void showSplash(int splash) {
 
 	int delay = 3000;
 	int splashMod = 0;
-	if (splash == SPLASH_BROKEN_GLASS) splashMod = -1.0;
+	if (menuCol.at(RESET_ENGINE).options.size() == 4) splashMod = -1.0;
 
 	float res = 0.3f + fabs(0.5f - (float) animateTex(SPLASH_ART_GLOW, delay, true) / delay);
 
@@ -526,14 +791,17 @@ void showSplash(int splash) {
 
 void pause() {
 
+	if (!menuCol.at(Notes).options.empty())
+		menuCol.at(Notes).show();
+
 	// basically the same as main menu but changing text from START GAME to RESUME GAME
 	// do this only once.
-	if (menuQueue.front().options.size() == 3)
-		menuQueue.front().options.push_back(
+	if (menuCol.at(RESET_ENGINE).options.size() == 3)
+		menuCol.at(RESET_ENGINE).options.push_back(
 			{ "RESUME GAME", BUTTON }
 		);
 
-	menuQueue.front().show();
+	menuCol.at(RESET_ENGINE).show();
 	showSplash(SPLASH_BROKEN_GLASS);
 
 
@@ -541,13 +809,17 @@ void pause() {
 
 void menu() {
 
+		if (!menuCol.at(Notes).options.empty() && currentScene != GAME_OPTIONS)
+			menuCol.at(Notes).show();
+
 		int result = animateTex(SplashArt0);
 		//	checking if animation playback has started.
 		
 		if (result == -1) {
 
-			menuQueue.front().show();
-			showSplash(SplashArt0);
+			menuCol.at(currentScene).show();
+			if (menuCol.at(RESET_ENGINE).options.size() == 4) showSplash(SPLASH_BROKEN_GLASS);
+			else showSplash(SplashArt0);
 
 		}
 		else if (result == 1) currentScene = -1;
@@ -560,13 +832,11 @@ void handleOptionInteraction(std::string option, int value = -1) {
 
 	//TODO: Create a separate class system for MENUs
 	if (option == "BACK") {
-		std::cout << "menus before: " << menuQueue.size() << std::endl;
+		//std::cout << "menus before: " << menuQueue.size() << std::endl;
 
 		//Putting the main menu back on queue before going to options.
-		menuQueue.push(menuQueue.front());
-		menuQueue.pop();
-
-		std::cout << "menus after: " << menuQueue.size() << std::endl;
+		currentScene = RESET_ENGINE;
+		//std::cout << "menus after: " << menuQueue.size() << std::endl;
 
 	}
 
@@ -607,18 +877,20 @@ void handleOptionInteraction(std::string option, int value = -1) {
 void handleMainMenuInteraction(std::string option, int value = -1) {
 
 	//? Maybe make an exit confirmation?
-	if (option == "EXIT") exit(0);
+	if (option == "EXIT") {
+		
+		// ask for confirmation
+		currentScene = GAME_EXIT;
+
+
+		exit(0);
+	}
+		
+		
 
 	if (option == "OPTIONS") {
 
-		std::cout << "menus before: " << menuQueue.size() << std::endl;
-
-		//Putting the main menu back on queue before going to options.
-		menuQueue.push(menuQueue.front());
-		menuQueue.pop();
-
-		std::cout << "menus after: " << menuQueue.size() << std::endl;
-
+		currentScene = GAME_OPTIONS;
 
 	}
 
@@ -626,8 +898,8 @@ void handleMainMenuInteraction(std::string option, int value = -1) {
 		
 		resetSHIBA(RESET_ENGINE);
 
-		if (menuQueue.front().options.size() == 4) 
-			menuQueue.front().options.pop_back();
+		if (menuCol.at(RESET_ENGINE).options.size() == 4)
+			menuCol.at(RESET_ENGINE).options.pop_back();
 
 		//currentScene = -1;	//	remove this code later
 		animateTex(SplashArt0, 600);
@@ -639,7 +911,7 @@ void handleMainMenuInteraction(std::string option, int value = -1) {
 
 	if (option == "RESUME GAME") {
 
-		menuQueue.front().options.pop_back();
+		menuCol.at(RESET_ENGINE).options.pop_back();
 		currentScene = -1;
 
 	}	
@@ -657,11 +929,11 @@ void draw() {
 	bulletPhysics();
 
 	int size = array_size(*levelQueue.front().levelGrid);
+	std::vector<int> transparentModels;
+
 
 	// loops through a collection of 3D models and draws them in level.
 	for (int i = 0; i < objectCollection.size(); i++) {
-
-		toggleTransparency(true);
 
 		// Setting the texture if available.
 		if (objectCollection.at(i).texture && !wireframe) {
@@ -678,21 +950,48 @@ void draw() {
 
 		}
 
+		if ((objectCollection.at(i).color == Wall_3) || objectCollection.at(i).glutSolids != nullptr 
+			&& abs(objectCollection.at(i).color) != Custom && objectCollection.at(i).color != Notes) {
+			transparentModels.push_back(i);
+		}
+		else objectCollection.at(i).load(); // Loads the object in the world.
 
-		// Loads the object in the world.
-		objectCollection.at(i).load();
-		
-		toggleTransparency(false);
 
 		glDisable(GL_TEXTURE_2D);
 
 		// loading bullets (if any)
 		for (auto& b : bulletMap) b.second.loadGlutSolids();
-		
 
 	}
 
 	renderWorldBox();
+
+	// rendering twice because it fixes items not being visible through transparent textures.
+	
+	for (int j : transparentModels) {
+
+		toggleTransparency(true);
+
+		glEnable(GL_TEXTURE_2D);
+
+		glBindTexture(GL_TEXTURE_2D, textureCollection.at(
+			abs(objectCollection.at(j).color)
+		));
+
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+		objectCollection.at(j).load();
+
+
+
+		glDisable(GL_TEXTURE_2D);
+
+		toggleTransparency(false);
+
+
+	}
+
 
 	return;
 
@@ -700,7 +999,7 @@ void draw() {
 
 void renderWorldBox() {
 
-	glBindTexture(GL_TEXTURE_2D, textureCollection.at(Empty));
+	glBindTexture(GL_TEXTURE_2D, textureCollection.at(CEILING));
 
 	// setting texture to repeat
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -716,36 +1015,42 @@ void renderWorldBox() {
 	int xAxis = 0, zAxis = 0;
 
 	// Rendering along the Z axis first and increase X after each pass.
-
-	/*
 	for (int xCounter = 0; xCounter < size; xCounter++) {
 
 		for (int zCounter = 0; zCounter < size; zCounter++) {
 
+			glBindTexture(GL_TEXTURE_2D, textureCollection.at(CEILING));
+
+			// checking if there are barriar blocks. Not rendering anything in that case.
+			if (levelQueue.front().levelGrid[size - 1 - zCounter][xCounter] == BARRIER) {
+				glBindTexture(GL_TEXTURE_2D, textureCollection.at(BARRIER));
+			}
+			toggleTransparency(true);
 			// drawing tiles CCW
 			glBegin(GL_QUADS);
-			glNormal3f(0, -1, 0);
+				glNormal3f(0, -1, 0);
 
-			glColor3f(1, 1, 1);
-			glTexCoord2f(0.0, 0.0);
-			glVertex3f(xAxis - TILESIZE, (WALLSIZE + GROUNDLEVEL), zAxis - TILESIZE);
+				glColor3f(1, 1, 1);
+				glTexCoord2f(0.0, 0.0);
+				glVertex3f(xAxis - TILESIZE, (WALLSIZE + GROUNDLEVEL), zAxis - TILESIZE);
 
-			glTexCoord2f(1.0, 0.0);
-			glVertex3f(xAxis + TILESIZE, (WALLSIZE + GROUNDLEVEL), zAxis - TILESIZE);
+				glTexCoord2f(1.0, 0.0);
+				glVertex3f(xAxis + TILESIZE, (WALLSIZE + GROUNDLEVEL), zAxis - TILESIZE);
 
-			glTexCoord2f(1.0, 1.0);
-			glVertex3f(xAxis + TILESIZE, (WALLSIZE + GROUNDLEVEL), zAxis + TILESIZE);
+				glTexCoord2f(1.0, 1.0);
+				glVertex3f(xAxis + TILESIZE, (WALLSIZE + GROUNDLEVEL), zAxis + TILESIZE);
 
-			glTexCoord2f(0.0, 1.0);
-			glVertex3f(xAxis - TILESIZE, (WALLSIZE + GROUNDLEVEL), zAxis + TILESIZE);
+				glTexCoord2f(0.0, 1.0);
+				glVertex3f(xAxis - TILESIZE, (WALLSIZE + GROUNDLEVEL), zAxis + TILESIZE);
 
 			glEnd();
 			xAxis += TILESIZE * 2;
+			toggleTransparency(false);
+
 		}
 		zAxis += TILESIZE * 2;
 		xAxis = 0;
 	}
-	*/
 
 	// rendering floor.
 	xAxis = 0; zAxis = 0;
@@ -753,29 +1058,44 @@ void renderWorldBox() {
 
 		for (int zCounter = 0; zCounter < size; zCounter++) {
 
+			glBindTexture(GL_TEXTURE_2D, textureCollection.at(Empty));
+			toggleTransparency(true);
+			// checking if there are barriar blocks. Not rendering anything in that case.
+			if (levelQueue.front().levelGrid[size - 1 - zCounter][xCounter] == BARRIER) {
+				glBindTexture(GL_TEXTURE_2D, textureCollection.at(BARRIER));
+				//continue;
+
+			}
+
 			// drawing tiles CCW
 			glBegin(GL_QUADS);
-			glNormal3f(0, 1, 0);
+				glNormal3f(0, 1, 0);
 
-			glColor3f(1, 1, 1);
-			glTexCoord2f(0.0, 0.0);
-			glVertex3f(xAxis - TILESIZE, (GROUNDLEVEL), zAxis + TILESIZE);
+				glColor3f(1, 1, 1);
+				glTexCoord2f(0.0, 0.0);
+				glVertex3f(xAxis - TILESIZE, (GROUNDLEVEL), zAxis + TILESIZE);
 
-			glTexCoord2f(1.0, 0.0);
-			glVertex3f(xAxis + TILESIZE, (GROUNDLEVEL), zAxis + TILESIZE);
+				glTexCoord2f(1.0, 0.0);
+				glVertex3f(xAxis + TILESIZE, (GROUNDLEVEL), zAxis + TILESIZE);
 
-			glTexCoord2f(1.0, 1.0);
-			glVertex3f(xAxis + TILESIZE, (GROUNDLEVEL), zAxis - TILESIZE);
+				glTexCoord2f(1.0, 1.0);
+				glVertex3f(xAxis + TILESIZE, (GROUNDLEVEL), zAxis - TILESIZE);
 
-			glTexCoord2f(0.0, 1.0);
-			glVertex3f(xAxis - TILESIZE, (GROUNDLEVEL), zAxis - TILESIZE);
+				glTexCoord2f(0.0, 1.0);
+				glVertex3f(xAxis - TILESIZE, (GROUNDLEVEL), zAxis - TILESIZE);
 
 			glEnd();
 			xAxis += TILESIZE * 2;
+
+			toggleTransparency(false);
+
 		}
 		zAxis += TILESIZE * 2;
 		xAxis = 0;
 	}
+
+
+	/*
 
 	glBindTexture(GL_TEXTURE_2D, textureCollection.at(BOUNDARY));
 
@@ -786,9 +1106,8 @@ void renderWorldBox() {
 	glBegin(GL_QUADS);
 
 	// Walls for level | West side wall
-
 	glNormal3f(0, 1.0f, 0);
-	glColor3f(1, 1, 1);
+	glColor4f(1, 1, 1, 0);
 
 	glTexCoord2f(0.0, 1.0);
 	glVertex3f(-TILESIZE, GROUNDLEVEL, -TILESIZE);
@@ -801,18 +1120,19 @@ void renderWorldBox() {
 
 	glTexCoord2f(0.0, 0.0);
 	glVertex3f(-TILESIZE, (GROUNDLEVEL + WALLSIZE), -TILESIZE);
+	
 
 	// North Wall
-	glTexCoord2f(0.0, 0.0);
+	glTexCoord2f(0.0, 1.0);
 	glVertex3f(levelBounds.x - TILESIZE, GROUNDLEVEL, -TILESIZE);
 
-	glTexCoord2f(10.0, 0.0);
+	glTexCoord2f(10.0, 1.0);
 	glVertex3f(levelBounds.x - TILESIZE, GROUNDLEVEL, levelBounds.z - TILESIZE);
 
-	glTexCoord2f(10.0, 1.0);
+	glTexCoord2f(10.0, 0.0);
 	glVertex3f(levelBounds.x - TILESIZE, (GROUNDLEVEL + WALLSIZE), levelBounds.z - TILESIZE);
 
-	glTexCoord2f(0.0, 1.0);
+	glTexCoord2f(0.0, 0.0);
 	glVertex3f(levelBounds.x - TILESIZE, (GROUNDLEVEL + WALLSIZE), -TILESIZE);
 
 	// South Wall
@@ -829,23 +1149,196 @@ void renderWorldBox() {
 	glVertex3f(-TILESIZE, GROUNDLEVEL, -TILESIZE);
 
 	// East Wall
-	glTexCoord2f(0.0, 0.0);
+	glTexCoord2f(0.0, 1.0);
 	glVertex3f(levelBounds.x - TILESIZE, GROUNDLEVEL, levelBounds.z - TILESIZE);
 
-	glTexCoord2f(10.0, 0.0);
+	glTexCoord2f(10.0, 1.0);
 	glVertex3f(-TILESIZE, GROUNDLEVEL, levelBounds.z - TILESIZE);
 
-	glTexCoord2f(10.0, 1.0);
+	glTexCoord2f(10.0, 0.0);
 	glVertex3f(-TILESIZE, (GROUNDLEVEL + WALLSIZE), levelBounds.z - TILESIZE);
 
-	glTexCoord2f(0.0, 1.0);
+	glTexCoord2f(0.0, 0.0);
 	glVertex3f(levelBounds.x - TILESIZE, (GROUNDLEVEL + WALLSIZE), levelBounds.z - TILESIZE);
 
 	glEnd();
 
+	*/
+
 	// GROUND IS RENDERED BY TILES.
 
+	// setting texture to repeat
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+	//wrapping the whole area with the texture.
+	for (int i = 0; i < 4; i++) {
+
+		glPushMatrix();
+			
+			glTranslatef(
+				levelBounds.x/2,
+				-120.0,
+				levelBounds.z/2
+			);
+
+			switch (i) {
+				case 0: glRotatef(0, 0, 1, 0); 
+						// Making a textured plane outside the map for a parallax effect.
+						glBindTexture(GL_TEXTURE_2D, textureCollection.at(EARTH));
+					break;
+
+				case 1: glRotatef(90, 0, 1, 0); 
+						// Making a textured plane outside the map for a parallax effect.
+						glBindTexture(GL_TEXTURE_2D, textureCollection.at(BLACK_HOLE));
+					break;
+
+				case 2: glRotatef(180, 0, 1, 0); 
+						// Making a textured plane outside the map for a parallax effect.
+						glBindTexture(GL_TEXTURE_2D, textureCollection.at(MOON));
+					break;
+
+				case 3: glRotatef(270, 0, 1, 0); 
+					// Making a textured plane outside the map for a parallax effect.
+						glBindTexture(GL_TEXTURE_2D, textureCollection.at(EARTH));
+					break;
+			}
+			glTranslatef(270, 0, 0);
+
+
+			glColor3f(1, 1, 1);
+			glBegin(GL_QUADS);
+			glNormal3f(0, -1, 0);
+
+				glTexCoord2f(0, 1.0);
+				glVertex3f(0.2, 0, -270);
+
+				glTexCoord2f(1, 1.0);
+				glVertex3f(0, 0, 270);
+
+				glTexCoord2f(1, 0.0);
+				glVertex3f(0, 400, 270);
+
+				glTexCoord2f(0, 0.0);
+				glVertex3f(0, 400, -270);
+
+			glEnd();
+		glPopMatrix();
+	}
+
 	glDisable(GL_TEXTURE_2D);
+
+
+
+
+}
+void barrierModel(ShibaObject a) {
+
+	ShibaQuad center;
+
+	center = a.vertexCol.at(0);
+	float width = 10;
+
+	toggleTransparency(true);
+
+	glPushMatrix();
+		glTranslatef(
+			center.x + a.offset.x + TILESIZE,
+			-0.5 + GROUNDLEVEL,
+			center.z + a.offset.z - TILESIZE
+		);
+
+		//glRotatef(90, 1, 0, 0);	//rotate the object with respect to camera yaw
+		//glRotatef(90, 0, 0, 1);	//rotate the object with respect to camera yaw
+
+		glBindTexture(GL_TEXTURE_2D, textureCollection.at(a.color));
+
+		// setting texture to repeat
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+		glEnable(GL_TEXTURE_2D);
+
+		glBegin(GL_QUADS);
+			//glNormal3f(0, -1, 0);
+
+			//glTexCoord2f(0, 1.0);
+			//glVertex3f(0.2, 0, -width / 2.0f);
+
+			//glTexCoord2f(1, 1.0);
+			//glVertex3f(0, 0, width / 2.0f);
+
+			//glTexCoord2f(1, 0.0);
+			//glVertex3f(0, TILESIZE, width / 2.0f);
+
+			//glTexCoord2f(0, 0.0);
+			//glVertex3f(0, TILESIZE, -width / 2.0f);
+
+		glEnd();
+
+
+	glPopMatrix();
+
+	glDisable(GL_TEXTURE_2D);
+
+	toggleTransparency(false);
+
+
+}
+
+void eggModel(ShibaObject a) {
+
+	ShibaQuad center;
+
+	center = a.vertexCol.at(0);
+	float width = 10;
+
+	toggleTransparency(true);
+
+
+	glPushMatrix();
+		glTranslatef(
+			center.x + a.offset.x + TILESIZE,
+			-0.5 + GROUNDLEVEL,
+			center.z + a.offset.z - TILESIZE
+		);
+
+		glRotatef(cameraPosition.yaw + 90, 0, 1, 0);	//rotate the object with respect to camera yaw
+
+		glBindTexture(GL_TEXTURE_2D, textureCollection.at(a.color));
+
+		// setting texture to repeat
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+		glEnable(GL_TEXTURE_2D);
+
+		glBegin(GL_QUADS);
+			glNormal3f(0, -1, 0);
+
+			glTexCoord2f(0, 1.0);
+			glVertex3f(0.2, 0, -width / 2.0f);
+
+			glTexCoord2f(1, 1.0);
+			glVertex3f(0, 0, width / 2.0f);
+
+			glTexCoord2f(1, 0.0);
+			glVertex3f(0, 25, width / 2.0f);
+
+			glTexCoord2f(0, 0.0);
+			glVertex3f(0, 25, -width / 2.0f);
+
+		glEnd();
+
+
+	glPopMatrix();
+
+	glDisable(GL_TEXTURE_2D);
+
+	toggleTransparency(false);
+
+
+
 }
 
 void maintainAspectRatio(int w, int h) {
@@ -867,8 +1360,12 @@ void resetSHIBA(int state) {
 		track = false;
 		track ? glutSetCursor(GLUT_CURSOR_NONE) : glutSetCursor(GLUT_CURSOR_INHERIT);
 		PLAYER_HP_MOD = 0;
+		PLAYER_DMG_MOD = 0;
+		ENEMY_SPAWN_MOD = 1;
 		player.objectives = 0;
-
+		player.kills = 0;
+		player.health = PLAYER_HP;
+		menuCol.at(Notes).options.clear();
 		
 		initLevels(backupLevelQueue);
 	}
@@ -879,9 +1376,13 @@ void resetSHIBA(int state) {
 
 	}
 	
-	// Check if game is over.
-	// set to game over screen.
+	// player died.
+	if (state == GAME_OVER) {
 
+		//show a generic splash where you're dead and ask to retry.
+
+
+	}
 	
 
 
@@ -949,7 +1450,7 @@ void listenForNormalKeys(unsigned char key, int xx, int yy) {
 
 			std::cout << "All enemy spawners triggered via hotkey" << std::endl;
 			std::cout << "ID: " << id << std::endl;
-			interactWithObj(id);	//This starts an animation.
+			//interactWithObj(id);	//This starts an animation.
 			levelSpawning = true;
 		}
 		break;
@@ -986,7 +1487,7 @@ void listenForNormalKeys(unsigned char key, int xx, int yy) {
 		break;
 
 	case (int)'g':
-		cameraPosition.y = cameraPosition.y > 1.0f ? 0.0f : 120.0f;
+		cameraPosition.y = cameraPosition.y > 1.0f ? 0.0f : 200.0f;
 		break;
 
 	case (int)'r':
@@ -1182,7 +1683,7 @@ void initLevels(std::queue <Level> queue) {
 	float x = 0.0, y = GROUNDLEVEL, z = 0.0;
 
 	if (DEBUGMODE) std::cout << "[Method] initLevels: Number of levels is " << queue.size() << std::endl;
-	std::cout << "Initializing Level..." << std::endl;
+	std::cout << "Initializing " << levelQueue.front().name << "..." << std::endl;
 
 	int repeatScale = 1;
 
@@ -1202,9 +1703,7 @@ void initLevels(std::queue <Level> queue) {
 			// Setting origin of object.
 			ShibaObject tile(x, y, z);
 
-			//! IN CASE THINGS BREAK REMOVE THIS CODE:
-			//! 
-			//tile.objectName = std::to_string(levelQueue.front().levelGrid[actualZ][actualX]);
+
 			tile.objectName = std::to_string(actualZ) + std::to_string(actualX);
 
 			// saving the color (not necessary when loading textures)
@@ -1222,8 +1721,26 @@ void initLevels(std::queue <Level> queue) {
 
 				}
 
-				if (tile.color == Wall || abs(tile.color) == DoorClosed) tile.texture = true;
+				if (tile.color == Wall || abs(tile.color) == DoorClosed 
+					|| tile.color == LevelExit || tile.color == EnemySpawner 
+					) tile.texture = true;
 				else tile.texture = false;
+
+				if (tile.color == Objective || tile.color == ObjectiveCollected) tile.setLoadGlutFunction(eggModel);
+				if (tile.color == BARRIER) tile.setLoadGlutFunction(barrierModel);
+				if (tile.color == Notes) tile.setLoadGlutFunction(notesModel);
+
+				// adding a random tile value for the walls.
+				if (tile.color == Wall) {
+					int texID = randomInt(0, 3);
+					switch (texID) {
+						case 3: tile.color = Wall; break;
+						case 2: tile.color = Wall_1; break;
+						case 1: tile.color = Wall_2; break;
+						case 0: tile.color = Wall_3; break;
+					};
+
+				}
 
 				// Ground vertexes:
 				// Bottom view
@@ -1247,10 +1764,10 @@ void initLevels(std::queue <Level> queue) {
 				// else if (tile.color == Empty) wallModifer = 0.01f;
 				else wallModifer = WALLSIZE;
 
-				tile.texturePoints.push_back({ 0.0, 0.0 });
-				tile.texturePoints.push_back({ 0.0, (float)repeatScale });
 				tile.texturePoints.push_back({ (float)repeatScale, (float)repeatScale });
 				tile.texturePoints.push_back({ (float)repeatScale, 0.0 });
+				tile.texturePoints.push_back({ 0.0, 0.0 });
+				tile.texturePoints.push_back({ 0.0, (float)repeatScale });
 
 				// Top view (only visible in god mode)
 				// P1 = bottom right vertex
@@ -1493,8 +2010,11 @@ bool collisionCheck(int direction, float x, float z) {
 	if (
 		(direction == 1)
 		&& //checking if within bounds
-		(tileVal == Wall || tileVal == Boss || tileVal == Custom || tileVal == DoorClosed 
-			|| tileVal == EnemySpawner || tileVal == Objective || tileVal == ObjectiveCollected || tileVal == LevelExit || tileVal == LevelExitOpen)
+		(
+			tileVal == Wall || tileVal == Boss || tileVal == Custom || tileVal == DoorClosed 
+			|| tileVal == EnemySpawner || tileVal == Objective || tileVal == ObjectiveCollected 
+			|| tileVal == LevelExit || tileVal == LevelExitOpen || tileVal == BARRIER
+		)
 		) return false; //stopping movement in that axis.
 
 
@@ -1502,14 +2022,16 @@ bool collisionCheck(int direction, float x, float z) {
 	if (
 		(direction == 2)
 		&&
-		(tileVal == Wall || tileVal == Boss || tileVal == Custom || tileVal == DoorClosed 
-			|| tileVal == EnemySpawner || tileVal == Objective || tileVal == ObjectiveCollected || tileVal == LevelExit || tileVal == LevelExitOpen)
+		(
+			tileVal == Wall || tileVal == Boss || tileVal == Custom || tileVal == DoorClosed 
+			|| tileVal == EnemySpawner || tileVal == Objective || tileVal == ObjectiveCollected 
+			|| tileVal == LevelExit || tileVal == LevelExitOpen || tileVal == BARRIER
+		)
 		) return false; //stopping movement in that axis.
 
 	return true;
 
 }
-
 
 void spawnPlayer() {
 	
@@ -1532,6 +2054,7 @@ void spawnPlayer() {
 
 
 }
+
 void checkForInteraction(Position& entity) {
 
 
@@ -1602,94 +2125,141 @@ void queueAnimation(int id, int x, int z) {
 
 	switch (tileValue) {
 
-	case LevelExitOpen:
 
-		// render the next level.
-		if (levelQueue.size() == 1) {
+		case Custom:
+			
+			if (levelQueue.front().name != "Level 1") return;
+			
+			target.y = 30.0f;
 
-			resetSHIBA(RESET_ENGINE);
-			currentScene = 0;
+			// adding to animation queue.
+			animationQueue.insert_or_assign(id, target);
 
-		}
-		else {
-			levelQueue.pop();
-			initLevels(levelQueue);
-			player.objectives = 0;
-		}
+
 		break;
 
-	case LevelExit:
-		if (player.objectives - player.objectives == levelQueue.front().objectives - player.objectives) {
 
+		case LevelExitOpen:
+
+			// render the next level.
+			if (levelQueue.size() == 1) {
+
+				resetSHIBA(RESET_ENGINE);
+				currentScene = 0;
+
+			}
+			else {
+				levelQueue.pop();
+				initLevels(levelQueue);
+				player.objectives = 0;
+			}
+		break;
+
+		case LevelExit:
+			if (player.objectives - player.objectives == levelQueue.front().objectives - player.objectives) {
+
+				// update the tile value
+				levelQueue.front().levelGrid[x][z] = LevelExitOpen;
+				objectCollection.at(id).color = LevelExitOpen;
+			}
+			else {
+
+				std::cout << "Don't have all objectives yet." << std::endl;
+			}
+
+		break;
+
+		case Objective:
+
+			player.objectives++;
+
+			// turn objective into an empty tile in the map.
+			levelQueue.front().levelGrid[x][z] = ObjectiveCollected;
+
+			// update objectdata
+			objectCollection.at(id).color = ObjectiveCollected;
+
+
+			if (player.objectives == levelQueue.front().objectives) {
+				//unlock door
+				//boost player stats
+				PLAYER_HP_MOD += 100;
+			}
+
+		break;
+
+		case DoorOpen:
+
+			target.y = 0.0f;	//door open position.
+
+			// adding to animation queue.
+			animationQueue.insert_or_assign(id, target);
+
+			// update the tile value
+			levelQueue.front().levelGrid[x][z] = DoorClosed;
+			objectCollection.at(id).color = DoorClosed;
+
+		break;
+
+		case EnemySpawner:
+
+			objectCollection.at(id).health -= PLAYER_DAMAGE + PLAYER_DMG_MOD;
+
+			if (objectCollection.at(id).health < 80) objectCollection.at(id).color = SPAWNER_1;
+			else if (objectCollection.at(id).health < 40) objectCollection.at(id).color = SPAWNER_2;
+
+			if (objectCollection.at(id).health <= 0) {
+				objectCollection.at(id).color = SPAWNER_3;
+				std::vector <int> temp;
+
+				// removing from location collection so they don't spawn in there anymore.
+				for (int eID : enemySpawnerLocations) {
+
+					if (objectCollection.at(eID).objectName != objectCollection.at(id).objectName) {
+						temp.push_back(eID);
+					}
+
+				}
+
+				enemySpawnerLocations.clear();
+				enemySpawnerLocations = temp;
+
+			}
+		
+		break;
+
+		case DoorClosed:
 			target.y = 19.9f;	//door open position.
 
 			// adding to animation queue.
 			animationQueue.insert_or_assign(id, target);
 
 			// update the tile value
-			levelQueue.front().levelGrid[x][z] = LevelExitOpen;
-			objectCollection.at(id).color = LevelExitOpen;
-		}
-		else {
-
-			std::cout << "Don't have all objectives yet." << std::endl;
-		}
+			levelQueue.front().levelGrid[x][z] = DoorOpen;
+			objectCollection.at(id).color = DoorOpen;
 
 		break;
 
-	case Objective:
 
-		player.objectives++;
+		case Notes:
 
-		// turn objective into an empty tile in the map.
-		levelQueue.front().levelGrid[x][z] = ObjectiveCollected;
+			// adding note to pause menu
+			if (collectNote() != -1)
+				menuCol.at(Notes).options.push_back({ "Note " + std::to_string(currentNoteCount), BUTTON });
+	
+			target.y = -19.9f;	//door open position.
+			animationQueue.insert_or_assign(id, target);
 
-		// update objectdata
-		objectCollection.at(id).color = ObjectiveCollected;
+			// add new note to inventory.
+			objectCollection.at(id).color = Empty;
+			levelQueue.front().levelGrid[x][z] = Empty;
+			objectCollection.at(id).glutSolids = nullptr;
 
-
-		if (player.objectives == levelQueue.front().objectives) {
-			//unlock door
-			//boost player stats
-			PLAYER_HP_MOD += 100;
-		}
-
-		break;
-
-	case DoorOpen:
-
-		target.y = 0.0f;	//door open position.
-
-		// adding to animation queue.
-		animationQueue.insert_or_assign(id, target);
-
-		// update the tile value
-		levelQueue.front().levelGrid[x][z] = DoorClosed;
-		objectCollection.at(id).color = DoorClosed;
 
 		break;
 
-	case EnemySpawner:
-		target.y = -WALLSIZE;	//door open position.
-
-		// adding to animation queue.
-		animationQueue.insert_or_assign(id, target);
-		break;
-
-	case DoorClosed:
-		target.y = 19.9f;	//door open position.
-
-		// adding to animation queue.
-		animationQueue.insert_or_assign(id, target);
-
-		// update the tile value
-		levelQueue.front().levelGrid[x][z] = DoorOpen;
-		objectCollection.at(id).color = DoorOpen;
-
-		break;
-
-	default:
-		break;
+		default:
+			break;
 	}
 
 }
@@ -1819,7 +2389,10 @@ void bulletPhysics() {
 		bulletMap.insert_or_assign(item.second.objectName, item.second);
 
 		int finalX = (array_size(*levelQueue.front().levelGrid) - 1) - item.second.tileX;
+		int size = array_size(*levelQueue.front().levelGrid);
+		int id = ((item.second.tileZ * size) + (item.second.tileX));
 
+		if (id < 0 || id >= (size * size)) id = -1;
 
 		// Check if bullet collides with any walls or obstacles here
 		if (levelQueue.front().levelGrid[finalX][item.second.tileZ] == Wall
@@ -1827,21 +2400,30 @@ void bulletPhysics() {
 			levelQueue.front().levelGrid[finalX][item.second.tileZ] == Objective
 			||
 			levelQueue.front().levelGrid[finalX][item.second.tileZ] == Custom
+			||
+			levelQueue.front().levelGrid[finalX][item.second.tileZ] == EnemySpawner
+			||
+			levelQueue.front().levelGrid[finalX][item.second.tileZ] == SPAWNER_1 
+			||
+			levelQueue.front().levelGrid[finalX][item.second.tileZ] == SPAWNER_2
 			) {
-			//if (levelQueue.front().levelGrid[finalX][item.second.tileZ] == EnemySpawner) 
-			// Implement this later
+			
+			if (levelQueue.front().levelGrid[finalX][item.second.tileZ] == EnemySpawner || 
+				levelQueue.front().levelGrid[finalX][item.second.tileZ] == SPAWNER_1 ||
+				levelQueue.front().levelGrid[finalX][item.second.tileZ] == SPAWNER_2) {
+
+				if (objectCollection.at(id).health > 0) interactWithObj(id);
+
+			}
+			
 			bulletMap.erase(item.second.objectName);
+
+
 			//std::cout << "Bullet killed by wall in tile (X:Z):  " << item.second.tileX << " : " << item.second.tileZ << std::endl;
 			continue;	// No need to check for level bound collisions afterwards
 		}
 
 		if (levelQueue.front().levelGrid[finalX][item.second.tileZ] == DoorClosed) {
-
-			int size = array_size(*levelQueue.front().levelGrid);
-			int id = ((item.second.tileZ * size) + (item.second.tileX));
-
-			if (id < 0 || id >= (size * size)) 
-				id = -1;
 
 			std::cout << "Bullet hit door:  " << item.second.tileX << " : " << item.second.tileZ << std::endl;
 
@@ -1905,9 +2487,19 @@ void shoot(Position entity) {
 
 void enemyPathing() {
 
+	// checking if spawners are still alive
+	bool atLeastOneAlive = false;
+
+	for (int spawnerID : enemySpawnerLocations) {
+
+		if (objectCollection.at(spawnerID).health > 0) atLeastOneAlive = true;
+		
+	}
+
+
 	//	Spawn new enemies if needed.
 	//	change this to spawn enemies proportional to game level and amount of spawners.
-	if (levelSpawning && enemyCollection.size() < levelQueue.front().enemies/2) {
+	if (atLeastOneAlive && levelSpawning && enemyCollection.size() < (levelQueue.front().enemies / 2) + ENEMY_SPAWN_MOD) {
 
 		int id = enemySpawnerLocations.at(randomInt(0, enemySpawnerLocations.size() - 1));
 
@@ -1977,7 +2569,6 @@ void enemyPathing() {
 
 
 	}
-
 
 	// Enemy path finding algo goes here
 	// exit if there's nothing to iterate
@@ -2068,7 +2659,7 @@ void enemyPathing() {
 				//std::cout << "HIT" << std::endl;
 
 				// inflict damage if hitting during combat. One shot if not detected.
-				if (playerInCombat) item.second.health -= PLAYER_DAMAGE;
+				if (playerInCombat) item.second.health -= PLAYER_DAMAGE + PLAYER_DMG_MOD;
 				else item.second.health = 0;
 
 				if (item.second.health <= 0) {
@@ -2127,10 +2718,7 @@ std::queue<ShibaQuad> aStarImplementation(ShibaObject& entity, Position goal, in
 
 		for (int i = 0; i < 2; i++) {
 
-			if (tempPos.frontObject != -1 && objectCollection.at(tempPos.frontObject).color != Wall &&
-				objectCollection.at(tempPos.frontObject).color != Boss && objectCollection.at(tempPos.frontObject).color != Objective &&
-				objectCollection.at(tempPos.frontObject).color != EnemySpawner && objectCollection.at(tempPos.frontObject).color != ObjectiveCollected &&
-				objectCollection.at(tempPos.frontObject).color != LevelExit && objectCollection.at(tempPos.frontObject).color != LevelExitOpen)
+			if (tempPos.frontObject != -1 && objectCollection.at(tempPos.frontObject).color == Empty)
 
 				objectIDRange.push_back(tempPos.frontObject);
 
@@ -2144,10 +2732,7 @@ std::queue<ShibaQuad> aStarImplementation(ShibaObject& entity, Position goal, in
 
 				checkForInteraction(tempPos);
 
-				if (tempPos.frontObject != -1 && objectCollection.at(tempPos.frontObject).color != Wall &&
-					objectCollection.at(tempPos.frontObject).color != Boss && objectCollection.at(tempPos.frontObject).color != Objective &&
-					objectCollection.at(tempPos.frontObject).color != EnemySpawner && objectCollection.at(tempPos.frontObject).color != ObjectiveCollected &&
-					objectCollection.at(tempPos.frontObject).color != LevelExit && objectCollection.at(tempPos.frontObject).color != LevelExitOpen)
+				if (tempPos.frontObject != -1 && objectCollection.at(tempPos.frontObject).color == Empty)
 
 					objectIDRange.push_back(tempPos.frontObject);
 
@@ -2214,17 +2799,14 @@ std::queue<ShibaQuad> aStarImplementation(ShibaObject& entity, Position goal, in
 
 			if (trace.frontObject != -1 
 				&& 
-				objectCollection.at(trace.frontObject).color != EnemySpawner
-				&&
-				objectCollection.at(trace.frontObject).color != Wall
-				&&
-				objectCollection.at(trace.frontObject).color != DoorClosed
-				&&
-				objectCollection.at(trace.frontObject).color != Boss
-				&&
-				objectCollection.at(trace.frontObject).color != Custom
-				&&
-				objectCollection.at(trace.frontObject).color != Objective
+				(
+					objectCollection.at(trace.frontObject).color == Empty
+					||
+					objectCollection.at(trace.frontObject).color == Notes
+					||
+					objectCollection.at(trace.frontObject).color == DoorOpen
+				)
+
 			) {	
 
 				// creating a new path tile.
@@ -2247,6 +2829,7 @@ std::queue<ShibaQuad> aStarImplementation(ShibaObject& entity, Position goal, in
 				if (pathMap.count(id) == 0) pathMap.insert_or_assign(id, p);
 				
 				// store the lowest cost among the available spots.
+				
 				if (!pathMap.at(id).visited)
 				if (lowestCost == -1 || lowestCost > cost) {
 					lowestCost = cost;
@@ -2376,6 +2959,36 @@ std::queue<ShibaQuad> aStarImplementation(ShibaObject& entity, Position goal, in
 	
 }
 
+
+void notesModel(ShibaObject a) {
+
+	ShibaQuad center;
+
+	center = a.vertexCol.at(0);
+
+
+
+	glNormal3f(0, -1, 0);
+	glPushMatrix();
+		glTranslatef(
+			center.x + a.offset.x + TILESIZE,
+			GROUNDLEVEL + 3.0f,
+			center.z + a.offset.z - TILESIZE
+		);
+
+		int angle = animateTex(a.color, 3600, true);
+
+		glRotatef((float) angle / 10.0f, 0, 1, 0);
+		glScalef(2.4, 1.7, .2);
+		texturedCube(1.3/2.0, Notes);
+
+		glColor3f(0.36, 0.396, 0.196);
+		glutSolidCube(1.3);
+
+
+	glPopMatrix();
+}
+
 void enemyModel(ShibaObject a) {
 
 	float enemyWidth = 5;
@@ -2402,8 +3015,8 @@ void enemyModel(ShibaObject a) {
 		// checking if player is within range.
 		if (objectCollection.at(i).tileX == cameraPosition.toTile().x && objectCollection.at(i).tileZ == cameraPosition.toTile().z) {
 			glColor3f(1, 0, 0);
-			int res = animateTex(EnemySpawner, 120);
-			if (res == 1) player.health -= 1;
+			int res = animateTex(EnemySpawner, 1000);
+			if (res == 1) player.health -= 5;
 		}
 		else {
 			glColor3f(0, 1, 0);
